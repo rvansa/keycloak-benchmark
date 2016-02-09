@@ -1,0 +1,89 @@
+{
+  "id": "benchmark-realm",
+  "realm":        "benchmark-realm",
+  "displayName":  "Benchmark",
+  "displayNameHtml": "",
+  "enabled":      "true",
+
+  "publicKey":    "generated",
+  "privateKey":   "generated",
+
+  "sslRequired":  "external",
+
+  "revokeRefreshToken": "false",
+  "passwordCredentialGrantAllowed": "false",
+  "registrationAllowed": "false",
+  "registrationEmailAsUsername": "false",
+  "rememberMe": "false",
+  "verifyEmail": "false",
+  "resetPasswordAllowed": "false",
+  "editUsernameAllowed": "false",
+
+  "bruteForceProtected": "false",
+
+  "roles": {
+    "realm": [
+      {
+        "id":   "admin",
+        "name": "admin",
+        "scopeParamRequired": "false",
+        "composite": "false"
+      },
+      {
+        "id":   "user",
+        "name": "user",
+        "scopeParamRequired": "false",
+        "composite": "false"
+      }
+    ]
+  },
+  "groups": [],
+  "defaultRoles": [ "user" ],
+  "defaultGroups": [],
+  "passwordPolicy": "",
+  "otpPolicyType": "",
+  "otpPolicyAlgorithm": "",
+  "otpPolicyInitialCounter": "0",
+  "otpPolicyDigits": "0",
+  "otpPolicyLookAheadWindow": "0",
+  "otpPolicyPeriod": "0",
+
+  "users": [],
+  "scopeMappings": [],
+  "clientScopeMappings": {},
+  "clients" : [
+    {
+      "clientId":             "benchmark-client",
+      "standardFlowEnabled":  "true",
+      "baseUrl":              "/benchmark",
+      "adminUrl":             "/benchmark",
+      "redirectUris": [ "http://localhost:8080/benchmark" ],
+      "secret":               "password"
+    }
+  ],
+  "clientTemplates": [],
+  "browserSecurityHeaders": {},
+  "smtpServer": {},
+  "userFederationProviders": [],
+  "userFederationMappers": [],
+  "loginTheme": "keycloak",
+  "accountTheme": "keycloak",
+  "adminTheme": "keycloak",
+  "emailTheme": "keycloak",
+
+  "eventsEnabled": "false",
+  "eventsExpiration": "0",
+  "eventsListeners": [],
+  "enabledEventTypes": [],
+
+  "adminEventsEnabled": "false",
+  "adminEventsDetailsEnabled": "false",
+
+  "identityProviders": [],
+  "identityProviderMappers": [],
+  "protocolMappers": [],
+  "internationalizationEnabled": "false",
+  "supportedLocales": [ "en_US" ],
+  "defaultLocale": "en_US",
+  "requiredActions": []
+}
