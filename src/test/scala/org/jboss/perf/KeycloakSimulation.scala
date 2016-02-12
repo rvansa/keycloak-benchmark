@@ -146,6 +146,6 @@ class KeycloakSimulation extends Simulation {
   setUp(
     users.inject(constantUsersPerSec(10) during 30).protocols(protocolConf()),
     admins.inject(constantUsersPerSec(5) during 30).protocols(protocolConf())
-  )
+  ).maxDuration(60)
 
 }

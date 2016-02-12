@@ -27,19 +27,7 @@ DIR=$(dirname $0)
 source $DIR/include.sh
 
 if [ "x$NO_PREPARE" = "x" ]; then
-    # Prepare servers = host controllers
-    for SERVER in ${SERVERS[@]}; do
-        echo "Copying server distribution to $SERVER..."
-        #$RCP $KEYCLOAK_DIST $SERVER:/tmp/keycloak-server.tar.gz
-        $RCP $DIR/../keycloak-benchmark.jar $DIR/../keycloak-benchmark-tests.jar $SERVER:/tmp
-        $RCP $DIR/../server/host.xml $DIR/*.sh $SERVER:/tmp
-        echo "Preparing server $SERVER..."
-        $RSH $SERVER chmod a+x /tmp/prepare.sh & /tmp/prepare.sh $SERVER
-        echo "Server $SERVER ready."
-    done
-
     # Prepare domain controller
-
     echo "Preparing domain controller..."
     mkdir $DC_DIR
     tar -xzf $KEYCLOAK_DIST -C $DC_DIR --strip-components=1
@@ -49,13 +37,24 @@ if [ "x$NO_PREPARE" = "x" ]; then
         sed 's/db-user-to-be-replaced/'$DB_USER'/' | \
         sed 's/db-password-to-be-replaced/'$DB_PASSWORD'/' \
         >  $DC_DIR/domain/configuration/domain.xml
-    echo "admin=c22052286cd5d72239a90fe193737253" > $DC_DIR/domain/configuration/mgmt-users.properties
     echo "Domain controller ready."
+
+    # Prepare servers = host controllers
+    for SERVER in ${SERVERS[@]}; do
+        echo "Copying server distribution to $SERVER..."
+        $RCP $KEYCLOAK_DIST $SERVER:/tmp/keycloak-server.tar.gz
+        $RCP $DIR/../keycloak-benchmark.jar $DIR/../keycloak-benchmark-tests.jar $SERVER:/tmp
+        $RCP $DIR/../server/host.xml $DIR/*.sh $SERVER:/tmp
+        echo "Preparing server $SERVER..."
+        $RSH $SERVER "chmod a+x /tmp/prepare.sh && /tmp/prepare.sh $SERVER"
+        $DIR/add-user.sh -u $SERVER -p admin -dc $DC_DIR/domain/configuration
+        echo "Server $SERVER ready."
+    done
 fi
 
 echo "Starting domain controller..."
 export JBOSS_HOME=$DC_DIR
-$DC_DIR/bin/domain.sh --host-config=host-master.xml -Djboss.management.native.address=$DC_ADDRESS &> /dev/null &
+$DC_DIR/bin/domain.sh --host-config=host-master.xml -bmanagement $DC_ADDRESS &> /dev/null &
 DC_PID=$!
 
 START_SERVER_PIDS=""
