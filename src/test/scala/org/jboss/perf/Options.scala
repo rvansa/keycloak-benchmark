@@ -6,8 +6,12 @@ package org.jboss.perf
   * @author Radim Vansa &lt;rvansa@redhat.com&gt;
   */
 object Options {
-  val host = System.getProperty("test.host", "localhost");
-  val port = Integer.getInteger("test.port", 8081);
+  // my id and number of driver machines
+  val driver = Integer.getInteger("test.driver", 0)
+  val drivers = Integer.getInteger("test.drivers", 1)
+
+  val host = System.getProperty("test.host", "keycloak");
+  val port = Integer.getInteger("test.port", 8080);
 
   val rampUp = Integer.getInteger("test.rampUp", 2).toInt
   val rps = Integer.getInteger("test.rps", 100).toDouble

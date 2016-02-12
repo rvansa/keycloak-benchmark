@@ -33,6 +33,9 @@ class KeycloakSimulation extends Simulation {
   val GET_LOGIN_URL: String = BASE_URL + "/protocol/openid-connect/auth"
   val LOGOUT_URL: String = BASE_URL + "/protocol/openid-connect/logout"
 
+  @volatile
+  var blackhole: Any = null;
+
   def protocolConf() = {
     http.baseURL("http://" + Options.host + ":" + Options.port).doNotTrackHeader("1").shareConnections.acceptHeader("text/html").disableFollowRedirect
   }
@@ -102,8 +105,7 @@ class KeycloakSimulation extends Simulation {
         .exec(admin("admin.remove-user").removeUser(realm, user("removed-user").id))),
       (Options.listUsersProbability * 100,
         exec(admin("admin.find-users").findUser(realm).use((s, list) => {
-          list.foreach(u => System.out.println(u.getUsername))
-          System.out.println("--------------")
+          list.foreach(u => blackhole = u)
           s
         })))
     )

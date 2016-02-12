@@ -1,11 +1,5 @@
 package org.jboss.perf
 
-import java.io.StringWriter
-import java.math.BigInteger
-import java.security.cert.X509Certificate
-import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
-import java.security.{KeyFactory, KeyPair, KeyPairGenerator, SecureRandom}
-import java.util.concurrent.TimeUnit
 import java.util.function.{Predicate, Consumer}
 import javax.ws.rs.core.{Response, HttpHeaders}
 
@@ -14,12 +8,8 @@ import org.keycloak.admin.client.resource.UsersResource
 import org.keycloak.common.util.{CertificateUtils, Base64}
 import org.keycloak.representations.idm.{UserRepresentation, RealmRepresentation}
 import org.keycloak.util.JsonSerialization
-import sun.security.tools.keytool.CertAndKeyGen
-import sun.security.x509._
 
 /**
-  * // TODO: Document this
-  *
   * @author Radim Vansa &lt;rvansa@redhat.com&gt;
   */
 object Loader {
@@ -34,7 +24,7 @@ object Loader {
   realmRepresentation.setCertificate(Security.Certificate)
 
   def connection: Keycloak = {
-    Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", "admin-cli")
+    Keycloak.getInstance("http://" + Options.host + ":" + Options.port + "/auth", "master", "admin", "admin", "admin-cli")
   }
 
   def main(args: Array[String]) {
@@ -49,9 +39,6 @@ object Loader {
     users.search("", null, null).forEach((u: UserRepresentation) => users.get(u.getId()).remove())
     for (user <- Feeders.totalUsers) {
       val u = users.create(user.toRepresentation)
-      if (Feeders.activeUsers.contains(user)) {
-        System.out.printf("Active user name=%s pwd=%s%n", user.username, user.password)
-      }
       val id: String = getUserId(u)
       u.close()
       users.get(id).resetPassword(user.getCredentials);

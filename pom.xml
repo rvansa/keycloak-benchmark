@@ -112,13 +112,11 @@
 			<groupId>org.jboss.logging</groupId>
 			<artifactId>jboss-logging</artifactId>
 			<version>${jboss-logging.version}</version>
-            <scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 			<version>4.5</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
@@ -129,17 +127,16 @@
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jackson2-provider</artifactId>
 			<version>${resteasy.version}</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
 			<version>${jackson.version}</version>
-			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
 	<build>
+		<finalName>${project.artifactId}</finalName>
 		<testSourceDirectory>src/test/scala</testSourceDirectory>
 		<pluginManagement>
 			<plugins>
@@ -184,23 +181,123 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>io.gatling</groupId>
-				<artifactId>gatling-maven-plugin</artifactId>
-				<version>${gatling.version}</version>
+				<artifactId>maven-jar-plugin</artifactId>
 				<executions>
 					<execution>
-						<phase>integration-test</phase>
+						<id>jar</id>
 						<goals>
-							<goal>execute</goal>
+							<goal>jar</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<outputDirectory>${project.build.directory}/dist</outputDirectory>
+						</configuration>
+					</execution>
+                    <execution>
+						<id>test-jar</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+						<phase>package</phase>
+						<configuration>
+							<outputDirectory>${project.build.directory}/dist</outputDirectory>
+							<excludes>
+								<exclude>META-INF/*.SF</exclude>
+							</excludes>
+						</configuration>
+                    </execution>
+                </executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.4.3</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<phase>package</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<filters>
+						<filter>
+							<artifact>*</artifact>
+							<excludes>
+								<exclude>META-INF/*.SF</exclude>
+							</excludes>
+						</filter>
+					</filters>
+					<!--<shadeTestJar>true</shadeTestJar>-->
+					<transformers>
+						<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+					</transformers>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-bin</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-resources</goal>
 						</goals>
 						<configuration>
-							<!--<jvmArgs>-->
-								<!--<param>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005</param>-->
-							<!--</jvmArgs>-->
+							<resources>
+								<resource>
+									<directory>${project.basedir}/src/test/resources/bin</directory>
+								</resource>
+							</resources>
+							<outputDirectory>${project.build.directory}/dist/bin</outputDirectory>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-server</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<resources>
+								<resource>
+									<directory>${project.basedir}/src/test/resources/server</directory>
+								</resource>
+							</resources>
+							<outputDirectory>${project.build.directory}/dist/server</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<id>set-executable</id>
+						<phase>package</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<chmod dir="${project.build.directory}/dist/bin" includes="*.sh" perm="755" verbose="true"/>
+							</target>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 		</plugins>
+		<testResources>
+			<testResource>
+				<directory>${project.basedir}/src/test/resources</directory>
+				<excludes>
+					<exclude>bin/*</exclude>
+					<exclude>server/*</exclude>
+				</excludes>
+			</testResource>
+		</testResources>
 	</build>
 </project>

@@ -31,12 +31,13 @@ case class Result[T](
 ) {
   def check(check: T => Boolean, fail: T => String): Result[T] = {
      value match {
-       case Success(v) => if (!check(v)) {
-         System.err.println("Request failed on : " + v)
-         Result(Failure(fail(value.get)), KO, startTime, endTime);
-       } else {
-         this
-       }
+       case Success(v) =>
+         if (!check(v)) {
+           System.err.println("Request failed on : " + v)
+           Result(Failure(fail(v)), KO, startTime, endTime);
+         } else {
+           this
+         }
        case _ => this
      }
   }

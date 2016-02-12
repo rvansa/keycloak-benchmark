@@ -20,7 +20,10 @@ object Feeders {
     Range(0, count).map(_ => User(randomString(Options.usernameLength, Util.random), randomString(Options.passwordLength, Util.random), null))
   }
 
-  val activeUsersProvider = new RandomDataProvider[Map[String, String]](activeUsers.map(u => addState(u.toMap, random)))
+  val activeUsersProvider = new RandomDataProvider[Map[String, String]](activeUsers
+    // this driver node will use only a subset of users
+    .filter(u => u.username.hashCode % Options.drivers == Options.driver)
+    .map(u => addState(u.toMap, random)))
 
   val activeUsersFeeder : Feeder[String] = activeUsersProvider.iterator(ThreadLocalRandom.current())
 

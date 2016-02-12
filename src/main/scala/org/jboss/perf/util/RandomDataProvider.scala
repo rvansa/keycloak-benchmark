@@ -1,12 +1,12 @@
 package org.jboss.perf.util
 
-import java.util.concurrent.ArrayBlockingQueue
+import java.util.Objects
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReferenceArray}
 
 import scala.util.Random
 
 /**
-  * Provides random access with fast reads, has bounded capacity.
+  * Provides random access with fast reads. Writes can block another writes.
   *
   * @author Radim Vansa &lt;rvansa@redhat.com&gt;
   */
@@ -14,10 +14,8 @@ class RandomDataProvider[T >: Null <: AnyRef](
                          seq: IndexedSeq[T],
                          cap: Int = 0
                          ) {
-  private val capacity = if (cap > 0) cap else seq.length * 2
-  private val freeSlots: Range = seq.length until capacity
-  private val data = new AtomicReferenceArray[T](capacity)
-  private val underflow = new ArrayBlockingQueue[Int](capacity)
+  private var capacity = if (cap > 0) cap else seq.length * 2
+  private var data = new AtomicReferenceArray[T](capacity)
   private val size = new AtomicInteger(seq.length)
 
   {
@@ -28,21 +26,30 @@ class RandomDataProvider[T >: Null <: AnyRef](
     }
   }
 
-  def +=(elem: T): RandomDataProvider[T] = {
-    val pos = underflow.take()
-    data.set(pos, elem)
-    size.incrementAndGet()
-    this
-  }
-
   private def dataIndexOf(elem: T, from: Int): Int = {
     if (from >= data.length()) {
       return -1
-    } else if (data.get(from).equals(elem)) {
+    } else if (Objects.equals(data.get(from), elem)) {
       return from
     } else {
       return dataIndexOf(elem, from + 1)
     }
+  }
+
+  def +=(elem: T): RandomDataProvider[T] = this.synchronized {
+    var pos = dataIndexOf(null, 0)
+    if (pos >= 0) {
+      data.set(pos, elem)
+      size.incrementAndGet()
+    } else {
+      val tmp = new AtomicReferenceArray[T](capacity * 2)
+      for (i <- 0 until capacity) {
+        tmp.set(i, data.get(i))
+      }
+      data = tmp;
+      capacity = tmp.length()
+    }
+    this
   }
 
   def -=(elem: T): RandomDataProvider[T] = {
@@ -61,7 +68,8 @@ class RandomDataProvider[T >: Null <: AnyRef](
 
   def random(random: Random): T = {
     while (true) {
-      val pos = random.nextInt(capacity)
+      val data = this.data;
+      val pos = random.nextInt(data.length())
       val element: T = data.get(pos)
       if (element != null) {
         return element
@@ -81,11 +89,14 @@ class RandomDataProvider[T >: Null <: AnyRef](
     null
   }
 
-  def removeOn(pos: Int): Option[T] = {
+  def removeOn(pos: Int): Option[T] = this.synchronized {
+    val data = this.data;
+    if (pos >= data.length()) {
+      None
+    }
     val element: T = data.get(pos)
     if (element != null) {
       if (data.compareAndSet(pos, element, null)) {
-        underflow.add(pos);
         size.decrementAndGet();
         return Some(element)
       }

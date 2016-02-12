@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 
-<host xmlns="urn:jboss:domain:4.0">
+<host xmlns="urn:jboss:domain:4.0" name="server-name-to-be-replaced">
     <extensions>
         <extension module="org.jboss.as.jmx"/>
     </extensions>
@@ -78,7 +78,7 @@
         </jvm>
     </jvms>
     <servers>
-        <server name="keycloak-server" group="keycloak-group" />
+        <server name="server-name-to-be-replaced" group="keycloak-group" />
     </servers>
     <profile>
         <subsystem xmlns="urn:jboss:domain:jmx:1.3">
