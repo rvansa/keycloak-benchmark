@@ -1,8 +1,6 @@
 package org.jboss.perf
 
 
-import java.util.NoSuchElementException
-
 import io.gatling.core.Predef
 import io.gatling.core.Predef._
 import io.gatling.core.pause.Normal
@@ -10,12 +8,11 @@ import io.gatling.core.session._
 import io.gatling.core.validation.{Failure, Validation, Success}
 import io.gatling.http.Predef._
 import io.gatling.http.request.builder.{HttpRequestBuilder, Http}
-import io.gatling.keycloak
 import org.jboss.perf.model.User
 import org.keycloak.adapters.spi.HttpFacade.Cookie
 
 
-import keycloak.Predef._
+import io.gatling.keycloak.Predef._
 import org.keycloak.admin.client.Keycloak
 import org.keycloak.admin.client.resource.RealmResource
 
@@ -138,14 +135,18 @@ class KeycloakSimulation extends Simulation {
     def apply(id: String) = throw new UnsupportedOperationException()
   }
 
-//  setUp(run(scenario(name)).inject(rampUsers(rps.toInt) over (rampUp seconds), constantUsersPerSec(rps) during (duration seconds)).protocols(protocolConf()))
   def realm: Expression[RealmResource] = {
     s => s("realm").as[RealmResource]
   }
 
   setUp(
-    users.inject(constantUsersPerSec(10) during 30).protocols(protocolConf()),
-    admins.inject(constantUsersPerSec(5) during 30).protocols(protocolConf())
-  ).maxDuration(60)
-
+    users.inject(
+      rampUsersPerSec(Options.usersPerSecond / 10) to Options.usersPerSecond during Options.rampUp,
+      constantUsersPerSec(Options.usersPerSecond) during Options.duration
+    ).protocols(protocolConf()),
+    admins.inject(
+      rampUsersPerSec(Options.adminsPerSecond / 10) to Options.adminsPerSecond during Options.rampUp,
+      constantUsersPerSec(Options.adminsPerSecond) during Options.duration
+    ).protocols(protocolConf())
+  ).maxDuration(Options.rampUp + Options.duration + Options.rampDown)
 }
