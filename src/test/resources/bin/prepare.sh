@@ -11,7 +11,7 @@ tar -xzf /tmp/keycloak-server.tar.gz -C $SERVER_DIR --strip-components=1
 # Add postgres driver module
 POSTGRES_CACHE=/tmp/postgresql-9.4.1207.jar
 if [ ! -e $POSTGRES_CACHE ]; then
-    wget https://jdbc.postgresql.org/download/postgresql-9.4.1207.jar -P $POSTGRES_CACHE
+    wget https://jdbc.postgresql.org/download/postgresql-9.4.1207.jar -P /tmp
 fi
 POSTGRES_DIR=$SERVER_DIR/modules/system/layers/base/org/postgresql/main/
 mkdir -p $POSTGRES_DIR

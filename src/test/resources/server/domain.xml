@@ -169,6 +169,9 @@
                     <distributed-cache name="sessions" mode="SYNC" owners="1"/>
                     <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
                     <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
+                    <local-cache name="realmVersions">
+                        <transaction mode="BATCH" locking="PESSIMISTIC"/>
+                    </local-cache>
                 </cache-container>
                 <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">
                     <transport lock-timeout="60000"/>

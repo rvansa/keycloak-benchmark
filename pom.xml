@@ -13,7 +13,7 @@
 		<encoding>UTF-8</encoding>
 
 		<gatling.version>2.1.7</gatling.version>
-		<keycloak.version>1.9.0.CR1-SNAPSHOT</keycloak.version>
+		<keycloak.version>1.9.0.Final-SNAPSHOT</keycloak.version>
 		<jboss-logging.version>3.3.0.Final</jboss-logging.version>
 		<jackson.version>2.6.5</jackson.version>
 		<resteasy.version>3.0.13.Final</resteasy.version>
@@ -58,11 +58,6 @@
                 <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
-			<!--<dependency>-->
-				<!--<groupId>com.fasterxml.jackson.jaxrs</groupId>-->
-				<!--<artifactId>jackson-jaxrs-json-provider</artifactId>-->
-				<!--<version>${jackson.version}</version>-->
-			<!--</dependency>-->
 		</dependencies>
 	</dependencyManagement>
 
@@ -229,7 +224,6 @@
 							</excludes>
 						</filter>
 					</filters>
-					<!--<shadeTestJar>true</shadeTestJar>-->
 					<transformers>
 						<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
 					</transformers>
