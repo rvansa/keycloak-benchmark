@@ -10,14 +10,13 @@ object Options {
   val driver: Int = Integer.getInteger("test.driver", 0)
   val drivers: Int = Integer.getInteger("test.drivers", 1)
 
-  val host = System.getProperty("test.host", "keycloak");
-  val port: Int = Integer.getInteger("test.port", 8080);
+  val hosts = System.getProperty("test.hosts", "keycloak:8080").split(",").filter(p => p != null && !p.trim().isEmpty)
 
   val rampUp: Int = Integer.getInteger("test.rampUp", 30).toInt
   val duration: Int = Integer.getInteger("test.duration", 30).toInt
   val rampDown: Int = Integer.getInteger("test.rampDown", 30).toInt
-  val usersPerSecond: Int = Integer.getInteger("test.usersPerSecond", 100)
-  val adminsPerSecond: Int = Integer.getInteger("test.adminsPerSecond", 2)
+  val usersPerSecond: Double = System.getProperty("test.usersPerSecond", "100").toDouble
+  val adminsPerSecond: Double = System.getProperty("test.adminsPerSecond", "2").toDouble
 
   var activeUsers: Int = Integer.getInteger("test.activeUsers", 50).toInt
   var totalUsers: Int = Integer.getInteger("test.totalUsers", 100).toInt

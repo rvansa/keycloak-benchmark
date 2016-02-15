@@ -9,6 +9,7 @@ import javax.security.cert.X509Certificate;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class MockHttpFacade implements HttpFacade {
 
       @Override
       public String getMethod() {
-         return null;  // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
 
       @Override
@@ -64,7 +65,7 @@ public class MockHttpFacade implements HttpFacade {
 
       @Override
       public String getFirstParam(String param) {
-         return null;  // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
 
       @Override
@@ -83,17 +84,17 @@ public class MockHttpFacade implements HttpFacade {
 
       @Override
       public String getHeader(String name) {
-         return null;  // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
 
       @Override
       public List<String> getHeaders(String name) {
-         return null;  // TODO: Customise this generated block
+         return Collections.EMPTY_LIST;
       }
 
       @Override
       public InputStream getInputStream() {
-         return null;  // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
 
       @Override
@@ -103,59 +104,54 @@ public class MockHttpFacade implements HttpFacade {
 
       @Override
       public void setError(AuthenticationError error) {
-         // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
 
       @Override
       public void setError(LogoutError error) {
-         // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
    }
 
    static class Response implements HttpFacade.Response {
       @Override
       public void setStatus(int status) {
-         // TODO: Customise this generated block
       }
 
       @Override
       public void addHeader(String name, String value) {
-         // TODO: Customise this generated block
       }
 
       @Override
       public void setHeader(String name, String value) {
-         // TODO: Customise this generated block
       }
 
       @Override
       public void resetCookie(String name, String path) {
-         // TODO: Customise this generated block
       }
 
       @Override
       public void setCookie(String name, String value, String path, String domain, int maxAge, boolean secure, boolean httpOnly) {
-         // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
 
       @Override
       public OutputStream getOutputStream() {
-         return null;  // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
 
       @Override
       public void sendError(int code) {
-         // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
 
       @Override
       public void sendError(int code, String message) {
-         // TODO: Customise this generated block
+         throw new UnsupportedOperationException();
       }
 
       @Override
       public void end() {
-         // TODO: Customise this generated block
       }
    }
 }

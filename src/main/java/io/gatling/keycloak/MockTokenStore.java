@@ -22,26 +22,26 @@ public class MockTokenStore implements AdapterTokenStore {
 
    @Override
    public void saveAccountInfo(OidcKeycloakAccount account) {
-      // TODO: Customise this generated block
+      throw new UnsupportedOperationException();
    }
 
    @Override
    public void logout() {
-      // TODO: Customise this generated block
+      throw new UnsupportedOperationException();
    }
 
    @Override
    public void refreshCallback(RefreshableKeycloakSecurityContext securityContext) {
-      // TODO: Customise this generated block
+      throw new UnsupportedOperationException();
    }
 
    @Override
    public void saveRequest() {
-      // TODO: Customise this generated block
+      throw new UnsupportedOperationException();
    }
 
    @Override
    public boolean restoreRequest() {
-      return false;  // TODO: Customise this generated block
+      throw new UnsupportedOperationException();
    }
 }

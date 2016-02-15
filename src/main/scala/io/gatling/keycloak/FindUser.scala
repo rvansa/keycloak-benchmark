@@ -3,11 +3,11 @@ package io.gatling.keycloak
 import akka.actor.ActorRef
 import akka.actor.ActorDSL._
 import io.gatling.core.action.builder.ActionBuilder
-import io.gatling.core.action.{Failable, Interruptable}
+import io.gatling.core.action.Interruptable
 import io.gatling.core.config.Protocols
 import io.gatling.core.result.writer.DataWriterClient
 import io.gatling.core.session.{Expression, Session}
-import io.gatling.core.validation.{Success, Validation}
+import io.gatling.core.validation.Validation
 import org.keycloak.admin.client.resource.RealmResource
 import org.keycloak.representations.idm.UserRepresentation
 
@@ -48,18 +48,21 @@ class FindUserAction(
                       attributes: FindUserAttributes,
                       val next: ActorRef
                     ) extends Interruptable with ExitOnFailure with DataWriterClient {
-  override def executeOrFail(session: Session): Validation[_] = {
-    attributes.realm(session).map(realm =>
-      Stopwatch(() => realm.users().search(
-          attributes.username.map(a => a(session).get).orNull,
-          attributes.firstName.map(a => a(session).get).orNull,
-          attributes.lastName.map(a => a(session).get).orNull,
-          attributes.email.map(a => a(session).get).orNull,
-          attributes.firstResult.map(a => a(session).get).orNull,
-          attributes.maxResults.map(a => a(session).get).orNull))
-        .record(this, session, attributes.requestName(session).get)
-        .map(users => attributes.use.map(use => use(session, users.toList)).getOrElse(session))
-        .map((s: Session) => next ! s)
+  override def executeOrFail(session: Session): Validation[_] =
+    attributes.realm(session).flatMap(realm =>
+      Blocking(() =>
+        Stopwatch(() => {
+          realm.users().search(
+            attributes.username.map(a => a(session).get).orNull,
+            attributes.firstName.map(a => a(session).get).orNull,
+            attributes.lastName.map(a => a(session).get).orNull,
+            attributes.email.map(a => a(session).get).orNull,
+            attributes.firstResult.map(a => a(session).get).orNull,
+            attributes.maxResults.map(a => a(session).get).orNull)
+        })
+          .recordAndContinue(this, session, attributes.requestName(session).get, users => {
+            attributes.use.map(use => use(session, users.toList)).getOrElse(session)
+          })
+      )
     )
-  }
 }

@@ -4,10 +4,9 @@ import java.math.BigInteger
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.security._
 import java.security.cert.X509Certificate
-import java.util
 import java.util.concurrent.TimeUnit
 
-import org.keycloak.common.util.{CertificateUtils, Base64}
+import org.keycloak.common.util.Base64
 import sun.security.x509._
 
 import scala.util.Random

@@ -4,7 +4,7 @@ import javax.ws.rs.core.{HttpHeaders, Response}
 
 import akka.actor.ActorDSL._
 import akka.actor.ActorRef
-import io.gatling.core.action.{Failable, Interruptable}
+import io.gatling.core.action.Interruptable
 import io.gatling.core.action.builder.ActionBuilder
 import io.gatling.core.config.Protocols
 import io.gatling.core.result.writer.DataWriterClient
@@ -40,7 +40,7 @@ case class AddUserActionBuilder(
   def saveAs(name: String) = saveWith((session, id) => session.set(name, id))
 
   override def build(next: ActorRef, protocols: Protocols): ActorRef = {
-    actor(actorName("authorize"))(new AddUserAction(attributes, next))
+    actor(actorName("add-user"))(new AddUserAction(attributes, next))
   }
 }
 
@@ -53,29 +53,29 @@ class AddUserAction(
     user.setUsername(attributes.username(session).get)
     attributes.enabled.map(e => user.setEnabled(e(session).get))
     attributes.realm(session).map(realm =>
-      Stopwatch(() => realm.users.create(user))
-        .check(response => response.getStatus == 201, response => {
-          val status = response.getStatusInfo.toString
-          System.err.printf("addUser(username=%s) failed: %s", attributes.username, status)
-          response.close()
-          status
-        })
-        .record(this, session, attributes.requestName(session).get + ".create-user")
-        .flatMap(response => {
-          val id = getUserId(response)
-          response.close()
-          val newSession = attributes.save.map(s => s(session, id)).getOrElse(session)
+      Blocking(() =>
+        Stopwatch(() => realm.users.create(user))
+          .check(response => response.getStatus == 201, response => {
+            val status = response.getStatusInfo.toString
+            response.close()
+            status
+          })
+          .recordAndStopOnFailure(this, session, attributes.requestName(session).get + ".create-user")
+          .onSuccess(response => {
+            val id = getUserId(response)
+            response.close()
+            val newSession = attributes.save.map(s => s(session, id)).getOrElse(session)
 
-          attributes.password.map(password => {
-            val credentials = new CredentialRepresentation
-            credentials.setType(CredentialRepresentation.PASSWORD)
-            credentials.setValue(password(newSession).get)
-            attributes.passwordTemporary.map(a => credentials.setTemporary(a(newSession).get))
-            Stopwatch(() => realm.users.get(id).resetPassword(credentials))
-              .record(this, newSession, attributes.requestName(session).get + ".reset-password").map(_ => newSession)
-          }).getOrElse(Success(newSession))
-        })
-        .map((s: Session) => next ! s)
+            attributes.password.map(password => {
+              val credentials = new CredentialRepresentation
+              credentials.setType(CredentialRepresentation.PASSWORD)
+              credentials.setValue(password(newSession).get)
+              attributes.passwordTemporary.map(a => credentials.setTemporary(a(newSession).get))
+              Stopwatch(() => realm.users.get(id).resetPassword(credentials))
+                .recordAndContinue(this, newSession, attributes.requestName(session).get + ".reset-password")
+            }).getOrElse(next ! newSession)
+          })
+      )
     )
   }
 

@@ -2,14 +2,12 @@ package io.gatling.keycloak
 
 import akka.actor.ActorDSL._
 import akka.actor.ActorRef
-import io.gatling.core.action.{Failable, Interruptable}
+import io.gatling.core.action.Interruptable
 import io.gatling.core.action.builder.ActionBuilder
 import io.gatling.core.config.Protocols
-import io.gatling.core.result.message.{KO, OK}
 import io.gatling.core.result.writer.DataWriterClient
 import io.gatling.core.session.{Session, Expression}
-import io.gatling.core.util.TimeHelper
-import io.gatling.core.validation.{Failure, Success, Validation}
+import io.gatling.core.validation.Validation
 
 /**
   * @author Radim Vansa &lt;rvansa@redhat.com&gt;
@@ -26,10 +24,10 @@ class RefreshTokenAction(
                         ) extends Interruptable with ExitOnFailure with DataWriterClient {
   override def executeOrFail(session: Session): Validation[_] = {
     val requestAuth: MockRequestAuthenticator = session(MockRequestAuthenticator.KEY).as[MockRequestAuthenticator]
-
-    Stopwatch(() => requestAuth.getKeycloakSecurityContext.refreshExpiredToken(true))
-      .check(identity, _ => "Could not refresh token")
-      .record(this, session, requestName(session).get)
-      .map(_ => next ! session)
+    Blocking(() =>
+      Stopwatch(() => requestAuth.getKeycloakSecurityContext.refreshExpiredToken(true))
+        .check(identity, _ => "Could not refresh token")
+        .recordAndContinue(this, session, requestName(session).get)
+    )
   }
 }

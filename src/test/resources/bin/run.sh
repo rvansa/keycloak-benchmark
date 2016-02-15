@@ -12,14 +12,14 @@
 # DB_USER and DB_PASSWORD. The PostgreSQL database *must* be running there   #
 # (this script does not setup DB).                                           #
 #                                                                            #
-# You also have to setup DNS record resolving 'keycloak' to $SERVERS.        #
-#                                                                            #
 # Additional parameters configurable through the properties file are:        #
 # * LOADER_ARGS = any parameters passed to loader                            #
 # * DRIVER_ARGS = any parameters passed to drivers                           #
 # * RSH = remote shell command (default is ssh)                              #
 # * RCP = remote copy command (default is scp)                               #
 # * DC_DIR = directory for the domain controller                             #
+# * LOG_DIR = directory for the logs                                         #
+# * SERVER_PORT = TCP port of server (defaults to 8080)                      #
 ##############################################################################
 
 DIR=$(dirname $0)
@@ -28,7 +28,10 @@ DC_ADDRESS=$HOSTNAME
 
 source $DIR/include.sh
 
-if [ -e $PROPERTIES ]; then
+if [ "x$PROPERTIES" = "x" ]; then
+    echo "No properties file defined."
+    exit 1
+elif [ -e $PROPERTIES ]; then
     source $PROPERTIES
 else
     "File $PROPERTIES does not exist, terminating."
@@ -41,6 +44,20 @@ DB_NAME=${DB_NAME:-test}
 DB_USER=${DB_USER:-test}
 DB_PASSWORD=${DB_PASSWORD:-test}
 DC_DIR=${DC_DIR:-/tmp/master}
+SERVER_PORT=${SERVER_PORT:-8080}
+
+if [ ${#SERVERS} -le 0 ]; then
+    echo "No servers defined."
+    exit 1
+elif [ ${#DRIVERS} -le 0 ]; then
+    echo "No drivers defined."
+    exit 1
+elif [ "x$KEYCLOAK_DIST" = "x" ]; then
+    echo "Keycloak distribution not defined."
+    exit 1
+fi
+
+SERVER_LIST=$(printf "%s:${SERVER_PORT}," "${SERVERS[@]}")
 
 if [ "x$NO_PREPARE" = "x" ]; then
     # Prepare domain controller
@@ -82,7 +99,7 @@ DC_PID=$!
 # let it run on background and parse output locally
 SERVER_FD=3
 for SERVER in ${SERVERS[@]}; do
-    eval "exec $SERVER_FD< <($RSH $SERVER /tmp/start_server.sh $SERVER $DC_ADDRESS)"
+    eval "exec $SERVER_FD< <($RSH $SERVER /tmp/start_server.sh $SERVER $DC_ADDRESS $LOG_DIR)"
     ((SERVER_FD++))
 done;
 LAST_FD=$((SERVER_FD - 1))
@@ -90,7 +107,8 @@ for SERVER_FD in `seq 3 $LAST_FD`; do
     while eval "read <&$SERVER_FD line"; do
         if [[  $line =~ Keycloak.*started.*\ in && ! ($line =~ Host\ Controller) ]]; then
             echo $line
-            eval "$SERVER_FD<&-" # close the fd
+            # pipe the output to /dev/null so that server is not blocked when it fills up the buffer
+            eval "cat <&$SERVER_FD > /dev/null " &
             break;
         fi
     done
@@ -98,16 +116,21 @@ done
 
 CP="$DIR/../keycloak-benchmark.jar:$DIR/../keycloak-benchmark-tests.jar"
 if [ "x$NO_LOADER" = "x" ]; then
-    echo "Loading data to server..."
-    java -cp $CP $LOADER_ARGS org.jboss.perf.Loader
-    echo "Data loaded"
+    echo $(date +"%H:%M:%S") "Loading data to server..."
+    if java -cp $CP $LOADER_ARGS -Dtest.hosts=$SERVER_LIST org.jboss.perf.Loader ; then
+        echo $(date +"%H:%M:%S") "Data loaded"
+    else
+        echo "Failed to load data!"
+        exit 1
+    fi
 fi
 
 echo "Starting test..."
 START_DRIVER_PIDS=""
 for INDEX in ${!DRIVERS[@]}; do
     DRIVER=${DRIVERS[$INDEX]}
-    $RSH $DRIVER 'java -cp /tmp/keycloak-benchmark.jar:/tmp/keycloak-benchmark-tests.jar '$DRIVER_ARGS' -Dtest.driver='$INDEX' -Dtest.drivers='${#DRIVERS[@]}' -Dtest.dir=/tmp/'$DRIVER' Engine' &
+    $RSH $DRIVER rm -rf /tmp/$DRIVER
+    $RSH $DRIVER "java -cp /tmp/keycloak-benchmark.jar:/tmp/keycloak-benchmark-tests.jar $DRIVER_ARGS -Dtest.hosts=$SERVER_LIST -Dtest.driver=$INDEX -Dtest.drivers=${#DRIVERS[@]} -Dtest.dir=/tmp/$DRIVER Engine" &
     START_DRIVER_PIDS="$START_DRIVER_PIDS $!"
 done
 if [ "x$START_DRIVER_PIDS" != "x" ]; then
@@ -115,6 +138,7 @@ if [ "x$START_DRIVER_PIDS" != "x" ]; then
 fi
 
 echo "Collecting simulation data..."
+rm -rf /tmp/report
 mkdir /tmp/report
 COLLECT_PIDS=""
 for DRIVER in ${DRIVERS[@]}; do
@@ -124,10 +148,6 @@ done
 if [ "x$COLLECT_PIDS" != "x" ]; then
     wait $COLLECT_PIDS
 fi
-head -n 1 /tmp/report/${DRIVERS[0]}-simulation.log > /tmp/report/simulation.log
-for DRIVER in ${DRIVERS[@]}; do
-    tail -n +2 /tmp/report/${DRIVER}-simulation.log >> /tmp/report/simulation.log
-done
 java -cp $CP -Dtest.report=/tmp/report Report
 
 echo "Killing servers..."

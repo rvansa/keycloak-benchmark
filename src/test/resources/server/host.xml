@@ -71,9 +71,11 @@
     </interfaces>
     <jvms>
         <jvm name="default">
-            <heap size="64m" max-size="256m"/>
+            <heap size="4G" max-size="4G"/>
             <jvm-options>
                 <option value="-server"/>
+                <option value="-XX:+UnlockCommercialFeatures"/>
+                <option value="-XX:+FlightRecorder"/>
             </jvm-options>
         </jvm>
     </jvms>

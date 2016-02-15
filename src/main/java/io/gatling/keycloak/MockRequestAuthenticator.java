@@ -39,7 +39,7 @@ public class MockRequestAuthenticator extends RequestAuthenticator {
 
    @Override
    protected String changeHttpSessionId(boolean create) {
-      return null;  // TODO: Customise this generated block
+      return null;
    }
 
    public RefreshableKeycloakSecurityContext getKeycloakSecurityContext() {
