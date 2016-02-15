@@ -86,7 +86,7 @@ for SERVER in ${SERVERS[@]}; do
     ((SERVER_FD++))
 done;
 LAST_FD=$((SERVER_FD - 1))
-for SERVER_FD in `seq 3,$LAST_FD`; do
+for SERVER_FD in `seq 3 $LAST_FD`; do
     while eval "read <&$SERVER_FD line"; do
         if [[  $line =~ Keycloak.*started.*\ in && ! ($line =~ Host\ Controller) ]]; then
             echo $line

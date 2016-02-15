@@ -141,11 +141,11 @@ class KeycloakSimulation extends Simulation {
 
   setUp(
     users.inject(
-      rampUsersPerSec(Options.usersPerSecond / 10) to Options.usersPerSecond during Options.rampUp,
+      rampUsersPerSec(math.max(Options.usersPerSecond / 10, 1)) to Options.usersPerSecond during Options.rampUp,
       constantUsersPerSec(Options.usersPerSecond) during Options.duration
     ).protocols(protocolConf()),
     admins.inject(
-      rampUsersPerSec(Options.adminsPerSecond / 10) to Options.adminsPerSecond during Options.rampUp,
+      rampUsersPerSec(math.max(Options.adminsPerSecond / 10, 1)) to Options.adminsPerSecond during Options.rampUp,
       constantUsersPerSec(Options.adminsPerSecond) during Options.duration
     ).protocols(protocolConf())
   ).maxDuration(Options.rampUp + Options.duration + Options.rampDown)
