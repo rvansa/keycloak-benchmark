@@ -1,14 +1,17 @@
 package org.jboss.perf.model
 
-import org.keycloak.representations.idm.{CredentialRepresentation, UserRepresentation}
+import java.util
 import java.util.Collections
+import org.keycloak.representations.idm.{RoleRepresentation, CredentialRepresentation, UserRepresentation}
+import scala.collection.JavaConverters._
 
 /**
   * @author Radim Vansa &lt;rvansa@redhat.com&gt;
   */
-case class User(val username: String, val password: String, var id: String) {
+case class User(val username: String, val password: String, var id: String, val active: Boolean, val realmRoles: List[String]) {
+
   def this(map: Map[String, String]) {
-    this(map("username"), map("password"), map("id"))
+    this(map("username"), map("password"), map("id"), true, List())
   }
 
   def getCredentials: CredentialRepresentation = {
@@ -26,9 +29,25 @@ case class User(val username: String, val password: String, var id: String) {
     var representation = new UserRepresentation
     // Id is ignored
     representation.setUsername(username)
-    representation.setEnabled(true)
+    if (active) {
+      representation.setFirstName("Johny");
+      representation.setLastName("Active");
+    } else {
+      representation.setFirstName("Bob");
+      representation.setLastName("Sleepy")
+    }
+    representation.setEnabled(active)
     // Actually the credentials will be ignored on server
     representation.setCredentials(Collections.singletonList(getCredentials))
+    representation.setRealmRoles(realmRoles.asJava)
     representation
+  }
+
+  def getRealmRoles(): util.List[RoleRepresentation] = {
+    realmRoles.map(r => {
+      val role = new RoleRepresentation(r, "", false);
+      role.setId(r)
+      role
+    }).asJava
   }
 }

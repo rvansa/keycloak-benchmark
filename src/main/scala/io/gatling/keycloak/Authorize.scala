@@ -75,7 +75,7 @@ class AuthorizeAction(
     val requestAuth: MockRequestAuthenticator = session(MockRequestAuthenticator.KEY).asOption[MockRequestAuthenticator] match {
       case Some(ra) => ra
       case None =>
-        val tmp = new MockRequestAuthenticator(facade, deployment, new MockTokenStore, -1)
+        val tmp = new MockRequestAuthenticator(facade, deployment, new MockTokenStore, -1, session.userId)
         nextSession = session.set(MockRequestAuthenticator.KEY, tmp)
         tmp
     }

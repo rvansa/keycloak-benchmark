@@ -13,12 +13,14 @@ import io.gatling.core.validation.{Success, Validation}
 import org.keycloak.admin.client.resource.RealmResource
 import org.keycloak.representations.idm.{CredentialRepresentation, UserRepresentation}
 
-// TODO name, mail etc.
 case class AddUserAttributes(
   requestName: Expression[String],
   realm: Expression[RealmResource],
   username: Expression[String],
-  enabled: Option[Expression[Boolean]] = Some(_ => Success(true)),
+  enabled: Expression[Boolean] = _ => Success(true),
+  firstName: Option[Expression[String]] = None,
+  lastName: Option[Expression[String]] = None,
+  email: Option[Expression[String]] = None,
   password: Option[Expression[String]] = None,
   passwordTemporary: Option[Expression[Boolean]] = None,
   save: Option[(Session, String) => Session] = None
@@ -32,9 +34,12 @@ case class AddUserActionBuilder(
                                ) extends ActionBuilder {
   def newInstance(attributes: AddUserAttributes) = new AddUserActionBuilder(attributes)
 
-  def enabled(enabled: Expression[Boolean]) = newInstance(attributes.copy(enabled = Some(enabled)))
+  def enabled(enabled: Expression[Boolean]) = newInstance(attributes.copy(enabled = enabled))
   def password(password: Expression[String], temporary: Expression[Boolean]) =
     newInstance(attributes.copy(password = Some(password), passwordTemporary = Some(temporary)))
+  def firstName(firstName: Expression[String]) = newInstance(attributes.copy(firstName = Some(firstName)))
+  def lastName(lastName: Expression[String]) = newInstance(attributes.copy(lastName = Some(lastName)))
+  def email(email: Expression[String]) = newInstance(attributes.copy(email = Some(email)))
   def saveWith[T](save: (Session, String) => Session) = newInstance(attributes.copy(save = Some(save)))
 
   def saveAs(name: String) = saveWith((session, id) => session.set(name, id))
@@ -51,7 +56,10 @@ class AddUserAction(
   override def executeOrFail(session: Session): Validation[_] = {
     val user = new UserRepresentation
     user.setUsername(attributes.username(session).get)
-    attributes.enabled.map(e => user.setEnabled(e(session).get))
+    user.setEnabled(attributes.enabled(session).get)
+    attributes.firstName.map(fn => user.setFirstName(fn(session).get))
+    attributes.lastName.map(ln => user.setLastName(ln(session).get))
+    attributes.email.map(e => user.setEmail(e(session).get))
     attributes.realm(session).map(realm =>
       Blocking(() =>
         Stopwatch(() => realm.users.create(user))

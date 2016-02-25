@@ -28,12 +28,6 @@
         "name": "admin",
         "scopeParamRequired": "false",
         "composite": "false"
-      },
-      {
-        "id":   "user",
-        "name": "user",
-        "scopeParamRequired": "false",
-        "composite": "false"
       }
     ]
   },
@@ -55,10 +49,10 @@
     {
       "clientId":             "benchmark-client",
       "standardFlowEnabled":  "true",
-      "baseUrl":              "/benchmark",
-      "adminUrl":             "/benchmark",
-      "redirectUris": [ "http://localhost:8080/benchmark" ],
-      "secret":               "password"
+      "secret":               "password",
+      "baseUrl":              "set in runtime",
+      "adminUrl":             "set in runtime",
+      "redirectUris":       [ "set in runtime" ]
     }
   ],
   "clientTemplates": [],

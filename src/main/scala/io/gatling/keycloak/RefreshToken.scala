@@ -25,7 +25,7 @@ class RefreshTokenAction(
   override def executeOrFail(session: Session): Validation[_] = {
     val requestAuth: MockRequestAuthenticator = session(MockRequestAuthenticator.KEY).as[MockRequestAuthenticator]
     Blocking(() =>
-      Stopwatch(() => requestAuth.getKeycloakSecurityContext.refreshExpiredToken(true))
+      Stopwatch(() => requestAuth.getKeycloakSecurityContext.refreshExpiredToken(false))
         .check(identity, _ => "Could not refresh token")
         .recordAndContinue(this, session, requestName(session).get)
     )

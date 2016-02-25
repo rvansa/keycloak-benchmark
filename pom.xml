@@ -13,7 +13,7 @@
 		<encoding>UTF-8</encoding>
 
 		<gatling.version>2.1.7</gatling.version>
-		<keycloak.version>1.9.0.Final-SNAPSHOT</keycloak.version>
+		<keycloak.version>1.9.0.Final</keycloak.version>
 		<jboss-logging.version>3.3.0.Final</jboss-logging.version>
 		<jackson.version>2.6.5</jackson.version>
 		<resteasy.version>3.0.13.Final</resteasy.version>
@@ -116,6 +116,16 @@
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-client</artifactId>
+			<version>${resteasy.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>jaxrs-api</artifactId>
+			<version>3.0.12.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-jdk-http</artifactId>
 			<version>${resteasy.version}</version>
 		</dependency>
 		<dependency>

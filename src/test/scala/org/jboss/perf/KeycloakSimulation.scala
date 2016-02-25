@@ -45,7 +45,7 @@ class KeycloakSimulation extends Simulation {
       .exec(http("user.get-login").get("http://${keycloak-server}" + GET_LOGIN_URL)
         .queryParam("login", "true").queryParam("response_type", "code").queryParam("client_id", CLIENT)
         .queryParam("state", "${state}").queryParam("redirect_uri", APP_URL)
-        .check(regex("action=\"([^\"]*)\"").saveAs("post-login-uri")))
+        .check(status.is(200), regex("action=\"([^\"]*)\"").saveAs("post-login-uri")))
       .exitHereIfFailed
       .pause(Options.userResponsePeriod, Normal(Options.userResponsePeriod / 10d))
       // Unsuccessful login attempts
@@ -90,7 +90,7 @@ class KeycloakSimulation extends Simulation {
 
   def adminsAdd = admins("admins-add")
     .exec(s => s.set("new-user", Util.randomString(Options.usernameLength)).set("new-password", Util.randomString(Options.passwordLength)))
-    .exec(admin("admin.add-user").addUser(realm, "${new-user}").password("${new-password}", false).saveAs("new-id"))
+    .exec(admin("admin.add-user").addUser(realm, "${new-user}").firstName("Jack").lastName("Active").password("${new-password}", false).saveAs("new-id"))
     .exec(s => {
       Feeders.addUser(s("new-user").as[String], s("new-password").as[String], s("new-id").as[String])
       s
@@ -127,7 +127,7 @@ class KeycloakSimulation extends Simulation {
   }
 
   def randomHost(): String = {
-    return Options.hosts(ThreadLocalRandom.current().nextInt(Options.hosts.length));
+    return Options.servers(ThreadLocalRandom.current().nextInt(Options.servers.length));
   }
 
   def run(scenario: ScenarioBuilder, opsPerSecond: Double = Options.usersPerSecond) = scenario.inject(

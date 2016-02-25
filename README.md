@@ -1,6 +1,6 @@
 # Keycloak Benchmark
 
-This is a stress test simulating users accessing fictive application that authorizes against one or more Keycloak servers, and admin users who change users' permissions etc.. There's no actual application and no container; the behaviour of particular `keycloak-adapter` is simulated within the test itself. Therefore SUT (system under test) covers only the servers themselves and shared (PostgreSQL) database.
+This is a stress test simulating users accessing fictive application that authorizes against one or more Keycloak servers, and admin users who change users' permissions etc.. There's no actual application and no container; the behaviour of particular `keycloak-adapter` is simulated within the test itself. For backchannel operations (such as logout notification) there's simple webserver (called AppServer) accepting requests from the server. ' Therefore SUT (system under test) covers only the Keycloak servers themselves, shared (PostgreSQL) database and the AppServer.
 
 The test is driven by Gatling and also produces its report with response times statistics. To observe internal behaviour of the server, use of Java Flight Recorder as a low-impact profiler is recommended.
 
@@ -23,6 +23,8 @@ The benchmark is configurable using file passed as first argument to this script
 - DC_DIR = directory for the domain controller
 - LOG_DIR = directory for the logs
 - SERVER_PORT = TCP port of server (defaults to 8080)
+- APP_ADDRESS = AppServer address
+- APP_PORT = AppServer port
 
 There is an example configuration `test/dist/bin/example-properties.sh`.
 
@@ -31,6 +33,7 @@ The test will follow these steps:
 - Start domain controller on local machine (where the script is executed)
 - Start host controllers and Keycloak servers in clustered mode (using adapted HA-profile)
 - Remove existing realm `benchmark-realm` from the server and create new one, with configurable number of users.
+- Starts AppServer
 - Run the actual Gatling test on all driver machines
 - Retrieve `simulation.log` files from driver machines
 - Create report from all drivers
@@ -81,5 +84,8 @@ Below is a table of options for the test (all these are to be found in `org.jbos
 | test.userResponsePeriod       |   1 | Time to e.g. fill in login screen, in seconds.
 | test.refreshTokenPeriod       |   3 | Time between token refresh requests, in seconds.
 | test.addRemoveUserProbability | 0.2 | Probability of admin adding new user, or removing existing one. These are equal to keep balanced number of active users throughout the test.
+| test.userRoles                | 150 | Number of distinct roles in the realm
+| test.userRolesPerUser         |   5 | Number of roles one user has
+| test.fullReload               | false | Applicable only to loader; reload whole realm (as opposed to only the active users)
 
 

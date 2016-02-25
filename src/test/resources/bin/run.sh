@@ -20,6 +20,8 @@
 # * DC_DIR = directory for the domain controller                             #
 # * LOG_DIR = directory for the logs                                         #
 # * SERVER_PORT = TCP port of server (defaults to 8080)                      #
+# * APP_ADDRESS = Address of the server for backchannel operations           #
+# * APP_PORT = Port of the server for backchannel operations                 #
 ##############################################################################
 
 DIR=$(dirname $0)
@@ -45,6 +47,8 @@ DB_USER=${DB_USER:-test}
 DB_PASSWORD=${DB_PASSWORD:-test}
 DC_DIR=${DC_DIR:-/tmp/master}
 SERVER_PORT=${SERVER_PORT:-8080}
+APP_ADDRESS=${APP_ADDRESS:-$HOSTNAME}
+APP_PORT=${APP_PORT:-8080}
 
 if [ ${#SERVERS} -le 0 ]; then
     echo "No servers defined."
@@ -58,6 +62,7 @@ elif [ "x$KEYCLOAK_DIST" = "x" ]; then
 fi
 
 SERVER_LIST=$(printf "%s:${SERVER_PORT}," "${SERVERS[@]}")
+DRIVER_LIST=$(printf "%s," "${DRIVERS[@]}")
 
 if [ "x$NO_PREPARE" = "x" ]; then
     # Prepare domain controller
@@ -84,10 +89,10 @@ if [ "x$NO_PREPARE" = "x" ]; then
         echo "Server $SERVER ready."
     done
 
-    for DRIVER in ${DRIVERS[@]}; do
+    for DRIVER in ${DRIVERS[@]} $APP_ADDRESS; do
         echo "Copying benchmark to $DRIVER"
         $RCP $DIR/../keycloak-benchmark.jar $DIR/../keycloak-benchmark-tests.jar $DRIVER:/tmp
-        echo "Driver $DRIVER ready."
+        echo "Driver/app server $DRIVER ready."
     done
 fi
 
@@ -117,7 +122,7 @@ done
 CP="$DIR/../keycloak-benchmark.jar:$DIR/../keycloak-benchmark-tests.jar"
 if [ "x$NO_LOADER" = "x" ]; then
     echo $(date +"%H:%M:%S") "Loading data to server..."
-    if java -cp $CP $LOADER_ARGS -Dtest.hosts=$SERVER_LIST org.jboss.perf.Loader ; then
+    if java -cp $CP $LOADER_ARGS -Dtest.servers=$SERVER_LIST -Dtest.app=$APP_ADDRESS:$APP_PORT org.jboss.perf.Loader ; then
         echo $(date +"%H:%M:%S") "Data loaded"
     else
         echo "Failed to load data!"
@@ -125,12 +130,16 @@ if [ "x$NO_LOADER" = "x" ]; then
     fi
 fi
 
+CP="/tmp/keycloak-benchmark.jar:/tmp/keycloak-benchmark-tests.jar"
+echo "Starting dummy app server..."
+$RSH $APP_ADDRESS "java -cp $CP $DRIVER_ARGS -Dtest.app=$APP_ADDRESS:$APP_PORT -Djava.net.preferIPv4Stack=true org.jboss.perf.AppServer" &
+
 echo "Starting test..."
 START_DRIVER_PIDS=""
 for INDEX in ${!DRIVERS[@]}; do
     DRIVER=${DRIVERS[$INDEX]}
     $RSH $DRIVER rm -rf /tmp/$DRIVER
-    $RSH $DRIVER "java -cp /tmp/keycloak-benchmark.jar:/tmp/keycloak-benchmark-tests.jar $DRIVER_ARGS -Dtest.hosts=$SERVER_LIST -Dtest.driver=$INDEX -Dtest.drivers=${#DRIVERS[@]} -Dtest.dir=/tmp/$DRIVER Engine" &
+    $RSH $DRIVER "java -cp $CP $DRIVER_ARGS -Dtest.servers=$SERVER_LIST -Dtest.app=$APP_ADDRESS:$APP_PORT -Dtest.driver=$INDEX -Dtest.drivers=$DRIVER_LIST -Dtest.dir=/tmp/$DRIVER Engine" &
     START_DRIVER_PIDS="$START_DRIVER_PIDS $!"
 done
 if [ "x$START_DRIVER_PIDS" != "x" ]; then
@@ -149,6 +158,17 @@ if [ "x$COLLECT_PIDS" != "x" ]; then
     wait $COLLECT_PIDS
 fi
 java -cp $CP -Dtest.report=/tmp/report Report
+
+if [ "x$LOG_DIR" != "x" ]; then
+    JFR_DIR=$LOG_DIR
+else
+    JFR_DIR=/tmp
+fi
+
+echo "Dumping JFRs to $JFR_DIR... "
+for SERVER in ${SERVERS[@]}; do
+    $RSH $SERVER 'jcmd `jps -vm | grep FlightRecorder | cut -f 1 -d " "` JFR.dump name='${SERVER}' filename='${JFR_DIR}'/'${SERVER}'.jfr'
+done
 
 echo "Killing servers..."
 for SERVER in ${SERVERS[@]}; do

@@ -9,17 +9,18 @@ import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.spi.HttpFacade;
 
 /**
- * // TODO: Document this
- *
  * @author Radim Vansa &lt;rvansa@redhat.com&gt;
  */
 public class MockRequestAuthenticator extends RequestAuthenticator {
    public static String KEY = MockRequestAuthenticator.class.getName();
 
    private RefreshableKeycloakSecurityContext keycloakSecurityContext;
+   // This is application-specific user session, used for backchannel operations
+   private final String sessionId;
 
-   public MockRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore, int sslRedirectPort) {
+   public MockRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore, int sslRedirectPort, String sessionId) {
       super(facade, deployment, tokenStore, sslRedirectPort);
+      this.sessionId = sessionId;
    }
 
    @Override
@@ -39,7 +40,7 @@ public class MockRequestAuthenticator extends RequestAuthenticator {
 
    @Override
    protected String changeHttpSessionId(boolean create) {
-      return null;
+      return sessionId;
    }
 
    public RefreshableKeycloakSecurityContext getKeycloakSecurityContext() {
