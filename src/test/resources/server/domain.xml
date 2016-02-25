@@ -169,6 +169,7 @@
                     <distributed-cache name="sessions" mode="SYNC" owners="1"/>
                     <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
                     <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
+                    <replicated-cache name="work" mode="SYNC"/>
                     <local-cache name="realmVersions">
                         <transaction mode="BATCH" locking="PESSIMISTIC"/>
                     </local-cache>
@@ -418,9 +419,6 @@
     </socket-binding-groups>
     <server-groups>
         <server-group name="keycloak-group" profile="ha">
-            <jvm name="default">
-                <heap size="64m" max-size="1G"/>
-            </jvm>
             <socket-binding-group ref="ha-sockets"/>
         </server-group>
     </server-groups>
