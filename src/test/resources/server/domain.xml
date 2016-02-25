@@ -420,6 +420,13 @@
     <server-groups>
         <server-group name="keycloak-group" profile="ha">
             <socket-binding-group ref="ha-sockets"/>
+            <jvm>
+                <heap size="4G" max-size="4G"/>
+                <jvm-options>
+                    <option value="-XX:+UnlockCommercialFeatures"/>
+                    <option value="-XX:+FlightRecorder"/>
+                </jvm-options>
+            </jvm>
         </server-group>
     </server-groups>
 </domain>

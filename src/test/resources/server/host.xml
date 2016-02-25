@@ -69,16 +69,6 @@
             <inet-address value="${jboss.bind.address:127.0.0.1}"/>
         </interface>
     </interfaces>
-    <jvms>
-        <jvm name="default">
-            <heap size="4G" max-size="4G"/>
-            <jvm-options>
-                <option value="-server"/>
-                <option value="-XX:+UnlockCommercialFeatures"/>
-                <option value="-XX:+FlightRecorder"/>
-            </jvm-options>
-        </jvm>
-    </jvms>
     <servers>
         <server name="server-name-to-be-replaced" group="keycloak-group" />
     </servers>
