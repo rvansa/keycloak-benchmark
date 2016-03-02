@@ -52,7 +52,9 @@ object Loader {
       try {
         val response = users.create(user.toRepresentation)
         var id: String = getUserId(response)
+        response.close()
         if (id == null) {
+          println("Expiration set to " + new SimpleDateFormat("HH:mm:ss").format(new Date(connection.get().tokenManager().getAccessToken.getExpiresIn)))
           val existing = users.search(user.username, null, null, null, null, null)
           if (existing == null || existing.isEmpty) {
             throw new IllegalStateException(s"User ${user.username} exists but we could not find any")
@@ -62,7 +64,6 @@ object Loader {
             id = existing.get(0).getId;
           }
         }
-        response.close()
         users.get(id).resetPassword(user.getCredentials);
         val counter: Int = loadCounter.incrementAndGet()
         if (counter % 100 == 0) {
