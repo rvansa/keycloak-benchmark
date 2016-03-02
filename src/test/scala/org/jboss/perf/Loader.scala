@@ -50,9 +50,9 @@ object Loader {
     var users = connection.get().realm(realmRepresentation.getRealm).users()
     for (i <- 1 until 100) {
       try {
-        val u = users.create(user.toRepresentation)
-        val id: String = getUserId(u)
-        u.close()
+        val response = users.create(user.toRepresentation)
+        val id: String = getUserId(response)
+        response.close()
         users.get(id).resetPassword(user.getCredentials);
         val counter: Int = loadCounter.incrementAndGet()
         if (counter % 100 == 0) {
@@ -75,10 +75,11 @@ object Loader {
     System.exit(1);
   }
 
-  def getUserId(u: Response): String = {
-    val location = u.getHeaderString(HttpHeaders.LOCATION)
+  def getUserId(response: Response): String = {
+    val location = response.getHeaderString(HttpHeaders.LOCATION)
     if (location == null) {
-      throw new IllegalStateException(u.getHeaders.toString)
+      throw new IllegalStateException("Failed to create user (no location): \nStatus: " + response.getStatusInfo()
+        + "\nHeaders: " + response.getHeaders.toString + "\nEntity: " + response.getEntity)
     }
     val lastSlash = location.lastIndexOf('/');
     if (lastSlash < 0) null else location.substring(lastSlash + 1)
