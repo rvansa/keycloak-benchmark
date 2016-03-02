@@ -51,7 +51,17 @@ object Loader {
     for (i <- 1 until 100) {
       try {
         val response = users.create(user.toRepresentation)
-        val id: String = getUserId(response)
+        var id: String = getUserId(response)
+        if (id == null) {
+          val existing = users.search(user.username, null, null, null, null, null)
+          if (existing == null || existing.isEmpty) {
+            throw new IllegalStateException(s"User ${user.username} exists but we could not find any")
+          } else if (existing.size() > 1) {
+            throw new IllegalStateException(s"Multiple users with username ${user.username}: " + existing)
+          } else {
+            id = existing.get(0).getId;
+          }
+        }
         response.close()
         users.get(id).resetPassword(user.getCredentials);
         val counter: Int = loadCounter.incrementAndGet()
@@ -78,8 +88,9 @@ object Loader {
   def getUserId(response: Response): String = {
     val location = response.getHeaderString(HttpHeaders.LOCATION)
     if (location == null) {
-      throw new IllegalStateException("Failed to create user (no location): \nStatus: " + response.getStatusInfo()
+      System.err.println("Failed to create user (no location): \nStatus: " + response.getStatusInfo()
         + "\nHeaders: " + response.getHeaders.toString + "\nEntity: " + response.getEntity)
+      return null;
     }
     val lastSlash = location.lastIndexOf('/');
     if (lastSlash < 0) null else location.substring(lastSlash + 1)
