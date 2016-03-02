@@ -1,5 +1,7 @@
 package org.jboss.perf
 
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.{Predicate, Consumer}
 import javax.ws.rs.core.{Response, HttpHeaders}
@@ -45,10 +47,9 @@ object Loader {
   }
 
   def addUser(user: User): Unit = {
-    while (true) {
+    var users = connection.get().realm(realmRepresentation.getRealm).users()
+    for (i <- 1 until 100) {
       try {
-        val realmResource = connection.get().realm(realmRepresentation.getRealm)
-        val users = realmResource.users()
         val u = users.create(user.toRepresentation)
         val id: String = getUserId(u)
         u.close()
@@ -56,16 +57,22 @@ object Loader {
         val counter: Int = loadCounter.incrementAndGet()
         if (counter % 100 == 0) {
           // damned scala
-          System.err.printf("Loaded %s/%s users\n", String.valueOf(counter), String.valueOf(Feeders.totalUsers.length))
+          System.err.println("%s, Loaded %s/%s users".format(new SimpleDateFormat("HH:mm:ss").format(new Date()), counter, Feeders.totalUsers.length))
         }
         return
       } catch {
         case e: Exception => {
+          System.err.println("Failed to create new user: ")
+          e.printStackTrace();
           this.connection.get().close()
-          this.connection.set(connection())
+          val conn = connection();
+          this.connection.set(conn)
+          users = conn.realm(realmRepresentation.getRealm).users();
         }
       }
     }
+    System.err.println("Failed 100 attempts to create an user");
+    System.exit(1);
   }
 
   def getUserId(u: Response): String = {
