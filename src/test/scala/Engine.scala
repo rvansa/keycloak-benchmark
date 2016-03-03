@@ -1,6 +1,6 @@
 import io.gatling.app.Gatling
 import io.gatling.core.config.GatlingPropertiesBuilder
-import org.jboss.perf.{Options, KeycloakSimulation}
+import org.jboss.perf.{AppServer, Options, KeycloakSimulation}
 import scala.collection.JavaConversions._
 
 object Engine extends App {

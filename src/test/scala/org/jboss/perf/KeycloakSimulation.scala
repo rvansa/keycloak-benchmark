@@ -127,7 +127,7 @@ class KeycloakSimulation extends Simulation {
   }
 
   def randomHost(): String = {
-    return Options.hosts(ThreadLocalRandom.current().nextInt(Options.hosts.length));
+    return Options.servers(ThreadLocalRandom.current().nextInt(Options.servers.length));
   }
 
   def run(scenario: ScenarioBuilder, opsPerSecond: Double = Options.usersPerSecond) = scenario.inject(

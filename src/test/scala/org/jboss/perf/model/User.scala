@@ -1,14 +1,17 @@
 package org.jboss.perf.model
 
-import org.keycloak.representations.idm.{CredentialRepresentation, UserRepresentation}
+import java.util
 import java.util.Collections
+import org.keycloak.representations.idm.{RoleRepresentation, CredentialRepresentation, UserRepresentation}
+import scala.collection.JavaConverters._
 
 /**
   * @author Radim Vansa &lt;rvansa@redhat.com&gt;
   */
-case class User(val username: String, val password: String, var id: String) {
+case class User(val username: String, val password: String, var id: String, val realmRoles: List[String]) {
+
   def this(map: Map[String, String]) {
-    this(map("username"), map("password"), map("id"))
+    this(map("username"), map("password"), map("id"), List())
   }
 
   def getCredentials: CredentialRepresentation = {
@@ -29,6 +32,15 @@ case class User(val username: String, val password: String, var id: String) {
     representation.setEnabled(true)
     // Actually the credentials will be ignored on server
     representation.setCredentials(Collections.singletonList(getCredentials))
+    representation.setRealmRoles(realmRoles.asJava)
     representation
+  }
+
+  def getRealmRoles(): util.List[RoleRepresentation] = {
+    realmRoles.map(r => {
+      val role = new RoleRepresentation(r, "", false);
+      role.setId(r)
+      role
+    }).asJava
   }
 }

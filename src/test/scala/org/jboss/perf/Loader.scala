@@ -1,5 +1,8 @@
 package org.jboss.perf
 
+import scala.collection.JavaConverters._
+
+import java.util.Collections
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
@@ -8,8 +11,8 @@ import javax.ws.rs.core.{Response, HttpHeaders}
 
 import org.jboss.perf.model.User
 import org.keycloak.admin.client.Keycloak
-import org.keycloak.admin.client.resource.UsersResource
-import org.keycloak.representations.idm.RealmRepresentation
+import org.keycloak.admin.client.resource.{UserResource, UsersResource}
+import org.keycloak.representations.idm.{ClientRepresentation, RoleRepresentation, RealmRepresentation}
 import org.keycloak.util.JsonSerialization
 
 /**
@@ -18,15 +21,26 @@ import org.keycloak.util.JsonSerialization
 object Loader {
   // TODO: catch exceptions
   val realmRepresentation: RealmRepresentation = JsonSerialization.readValue(getClass.getResourceAsStream("/keycloak/benchmark-realm.json"), classOf[RealmRepresentation])
-  val realmName = realmRepresentation.getRealm
+
   val client = realmRepresentation.getClients().stream().findFirst().get()
+  client.setRedirectUris(Collections.singletonList("http://" + Options.app + "/app"))
+  client.setBaseUrl("http://" + Options.app + "/")
+  client.setAdminUrl("http://" + Options.app + "/admin")
+
+  realmRepresentation.getRoles.getRealm.addAll((0 until Options.userRoles).map(i => {
+    val role = new RoleRepresentation("user_role_" + i, "", false)
+    role.setId("user_role_" + i)
+    role
+  }).asJava)
+  val realmName = realmRepresentation.getRealm
+
   val loadCounter = new AtomicInteger()
 
   realmRepresentation.setPublicKey(Security.PublicKey)
   realmRepresentation.setPrivateKey(Security.PrivateKey)
   realmRepresentation.setCertificate(Security.Certificate)
 
-  def connection(host: String = Options.hosts(0)): Keycloak = {
+  def connection(host: String = Options.servers(0)): Keycloak = {
     Keycloak.getInstance("http://" + host + "/auth", "master", "admin", "admin", "admin-cli")
   }
 
@@ -48,7 +62,7 @@ object Loader {
 
   def addUser(user: User): Unit = {
     var users = connection.get().realm(realmRepresentation.getRealm).users()
-    for (i <- 1 until 100) {
+    for (i <- 0 until 100) {
       try {
         val response = users.create(user.toRepresentation)
         var id: String = getUserId(response)
@@ -64,7 +78,9 @@ object Loader {
             id = existing.get(0).getId;
           }
         }
-        users.get(id).resetPassword(user.getCredentials);
+        val userResource: UserResource = users.get(id)
+        userResource.resetPassword(user.getCredentials);
+        userResource.roles().realmLevel().add(user.getRealmRoles())
         val counter: Int = loadCounter.incrementAndGet()
         if (counter % 100 == 0) {
           // damned scala

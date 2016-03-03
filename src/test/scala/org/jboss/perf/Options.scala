@@ -8,9 +8,10 @@ package org.jboss.perf
 object Options {
   // my id and number of driver machines
   val driver: Int = Integer.getInteger("test.driver", 0)
-  val drivers: Int = Integer.getInteger("test.drivers", 1)
 
-  val hosts = System.getProperty("test.hosts", "keycloak:8080").split(",").filter(p => p != null && !p.trim().isEmpty)
+  val drivers = System.getProperty("test.drivers", "localhost").split(",").filter(p => p != null && !p.trim().isEmpty)
+  val servers = System.getProperty("test.servers", "keycloak:8080").split(",").filter(p => p != null && !p.trim().isEmpty)
+  val app = System.getProperty("test.app", "localhost:8080")
 
   val rampUp: Int = Integer.getInteger("test.rampUp", 30).toInt
   val duration: Int = Integer.getInteger("test.duration", 30).toInt
@@ -22,6 +23,8 @@ object Options {
   var totalUsers: Int = Integer.getInteger("test.totalUsers", 100).toInt
   var usernameLength: Int = Integer.getInteger("test.usernameLength", 16).toInt
   var passwordLength: Int = Integer.getInteger("test.passwordLength", 16).toInt
+  var userRoles: Int = Integer.getInteger("test.userRoles", 100).toInt
+  var userRolesPerUser: Int = Integer.getInteger("test.userRolesPerUser", 5).toInt
 
   // user behaviour
   val loginFailureProbability: Double = System.getProperty("test.loginFailureProbability", "0.2").toDouble

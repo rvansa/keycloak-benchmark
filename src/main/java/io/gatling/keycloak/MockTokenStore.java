@@ -27,12 +27,10 @@ public class MockTokenStore implements AdapterTokenStore {
 
    @Override
    public void logout() {
-      throw new UnsupportedOperationException();
    }
 
    @Override
    public void refreshCallback(RefreshableKeycloakSecurityContext securityContext) {
-      throw new UnsupportedOperationException();
    }
 
    @Override

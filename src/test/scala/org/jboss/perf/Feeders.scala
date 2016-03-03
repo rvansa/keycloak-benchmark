@@ -4,6 +4,7 @@ import org.jboss.perf.model.User
 import org.jboss.perf.Util._
 import org.jboss.perf.util.{Invalidatable, InvalidatableRandomContainer, RandomContainer}
 
+import scala.collection.mutable
 import scala.concurrent.forkjoin.ThreadLocalRandom
 import scala.util.Random
 
@@ -16,12 +17,12 @@ object Feeders {
   val totalUsers = random.shuffle(activeUsers ++ generateCredentials(Options.totalUsers - Options.activeUsers))
 
   def generateCredentials(count: Int): IndexedSeq[User] = {
-    Range(0, count).map(_ => User(randomString(Options.usernameLength, Util.random), randomString(Options.passwordLength, Util.random), null))
+    Range(0, count).map(_ => User(randomString(Options.usernameLength, Util.random), randomString(Options.passwordLength, Util.random), null, randomRoles(Util.random)))
   }
 
   val activeUsersContainer = new RandomContainer[Map[String, String]](activeUsers
     // this driver node will use only a subset of users
-    .filter(u => math.abs(u.username.hashCode) % Options.drivers == Options.driver)
+    .filter(u => math.abs(u.username.hashCode) % Options.drivers.size == Options.driver)
     .map(u => addState(u.toMap, random)))
   val executingUsersContainer = new InvalidatableRandomContainer[Map[String, String]](Options.activeUsers)
 
@@ -42,7 +43,7 @@ object Feeders {
   }
 
   def addUser(username : String, password: String, id : String): Unit = {
-    val user: User = new User(username, password, id)
+    val user: User = new User(username, password, id, randomRoles())
     activeUsersContainer += addState(user.toMap)
   }
 
@@ -71,5 +72,13 @@ object Feeders {
 
   private def addState(map : Map[String, String], rand: Random = ThreadLocalRandom.current()) = {
     map.updated("state", randomUUID(rand))
+  }
+
+  def randomRoles(rand: Random = ThreadLocalRandom.current()) = {
+    val roles = mutable.Buffer[String]()
+    for (i <- 0 until Options.userRolesPerUser) {
+      roles += ("user_role_" + random.nextInt(Options.userRoles))
+    }
+    roles.toList
   }
 }
