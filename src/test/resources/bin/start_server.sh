@@ -21,7 +21,7 @@ echo $ROOT_PID > /tmp/$SERVER/pid;
 sleep 10
 SERVER_PID=`jps -vm | grep -e 'FlightRecorder' | cut -f 1 -d " "`
 if [ "x$SERVER_PID" != "x" ]; then
-    jcmd $SERVER_PID JFR.start filename=$LOG_DIR/$SERVER.jfr settings=profile duration=7200s
+    jcmd $SERVER_PID JFR.start filename=$LOG_DIR/$SERVER.jfr settings=profile
 else
     echo "Flight Recorder is not available"
 fi
