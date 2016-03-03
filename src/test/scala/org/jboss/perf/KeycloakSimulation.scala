@@ -45,7 +45,7 @@ class KeycloakSimulation extends Simulation {
       .exec(http("user.get-login").get("http://${keycloak-server}" + GET_LOGIN_URL)
         .queryParam("login", "true").queryParam("response_type", "code").queryParam("client_id", CLIENT)
         .queryParam("state", "${state}").queryParam("redirect_uri", APP_URL)
-        .check(regex("action=\"([^\"]*)\"").saveAs("post-login-uri")))
+        .check(status.is(200), regex("action=\"([^\"]*)\"").saveAs("post-login-uri")))
       .exitHereIfFailed
       .pause(Options.userResponsePeriod, Normal(Options.userResponsePeriod / 10d))
       // Unsuccessful login attempts

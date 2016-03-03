@@ -120,7 +120,7 @@ done
 CP="$DIR/../keycloak-benchmark.jar:$DIR/../keycloak-benchmark-tests.jar"
 if [ "x$NO_LOADER" = "x" ]; then
     echo $(date +"%H:%M:%S") "Loading data to server..."
-    if java -cp $CP $LOADER_ARGS -Dtest.servers=$SERVER_LIST org.jboss.perf.Loader ; then
+    if java -cp $CP $LOADER_ARGS -Dtest.servers=$SERVER_LIST -Dtest.app=$APP_ADDRESS:$APP_PORT org.jboss.perf.Loader ; then
         echo $(date +"%H:%M:%S") "Data loaded"
     else
         echo "Failed to load data!"
@@ -128,15 +128,16 @@ if [ "x$NO_LOADER" = "x" ]; then
     fi
 fi
 
+CP="/tmp/keycloak-benchmark.jar:/tmp/keycloak-benchmark-tests.jar"
 echo "Starting dummy app server..."
-$RSH $APP_ADDRESS "java -cp /tmp/keycloak-benchmark.jar:/tmp/keycloak-benchmark-tests.jar -Djava.net.preferIPv4Stack=true org.jboss.perf.AppServer" &
+$RSH $APP_ADDRESS "java -cp $CP $DRIVER_ARGS -Dtest.app=$APP_ADDRESS:$APP_PORT -Djava.net.preferIPv4Stack=true org.jboss.perf.AppServer" &
 
 echo "Starting test..."
 START_DRIVER_PIDS=""
 for INDEX in ${!DRIVERS[@]}; do
     DRIVER=${DRIVERS[$INDEX]}
     $RSH $DRIVER rm -rf /tmp/$DRIVER
-    $RSH $DRIVER "java -cp /tmp/keycloak-benchmark.jar:/tmp/keycloak-benchmark-tests.jar $DRIVER_ARGS -Dtest.servers=$SERVER_LIST -Dtest.app=${APP_ADDRESS}:${APP_PORT} -Dtest.driver=$INDEX -Dtest.drivers=$DRIVER_LIST -Dtest.dir=/tmp/$DRIVER Engine" &
+    $RSH $DRIVER "java -cp $CP $DRIVER_ARGS -Dtest.servers=$SERVER_LIST -Dtest.app=$APP_ADDRESS:$APP_PORT -Dtest.driver=$INDEX -Dtest.drivers=$DRIVER_LIST -Dtest.dir=/tmp/$DRIVER Engine" &
     START_DRIVER_PIDS="$START_DRIVER_PIDS $!"
 done
 if [ "x$START_DRIVER_PIDS" != "x" ]; then
