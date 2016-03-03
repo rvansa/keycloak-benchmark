@@ -157,6 +157,17 @@ if [ "x$COLLECT_PIDS" != "x" ]; then
 fi
 java -cp $CP -Dtest.report=/tmp/report Report
 
+if [ "x$LOG_DIR" != "x" ]; then
+    JFR_DIR=$LOG_DIR
+else
+    JFR_DIR=/tmp
+fi
+
+echo "Dumping JFRs to $JFR_DIR... "
+for SERVER in ${SERVERS[@]}; do
+    $RSH $SERVER 'jcmd `jps -vm | grep FlightRecorder | cut -f 1 -d " "` JFR.dump name='${SERVER}' filename='${JFR_DIR}'/'${SERVER}'.jfr'
+done
+
 echo "Killing servers..."
 for SERVER in ${SERVERS[@]}; do
     $RSH $SERVER /tmp/stop_server.sh $SERVER
