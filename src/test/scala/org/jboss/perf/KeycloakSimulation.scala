@@ -90,7 +90,7 @@ class KeycloakSimulation extends Simulation {
 
   def adminsAdd = admins("admins-add")
     .exec(s => s.set("new-user", Util.randomString(Options.usernameLength)).set("new-password", Util.randomString(Options.passwordLength)))
-    .exec(admin("admin.add-user").addUser(realm, "${new-user}").password("${new-password}", false).saveAs("new-id"))
+    .exec(admin("admin.add-user").addUser(realm, "${new-user}").firstName("Jack").lastName("Active").password("${new-password}", false).saveAs("new-id"))
     .exec(s => {
       Feeders.addUser(s("new-user").as[String], s("new-password").as[String], s("new-id").as[String])
       s

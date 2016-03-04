@@ -13,11 +13,13 @@ import scala.util.Random
   */
 object Feeders {
 
-  val activeUsers = generateCredentials(Options.activeUsers)
-  val totalUsers = random.shuffle(activeUsers ++ generateCredentials(Options.totalUsers - Options.activeUsers))
+  val inactiveUsers = generateCredentials(Options.totalUsers - Options.activeUsers, false)
+  val activeUsers = generateCredentials(Options.activeUsers, true)
+  val totalUsers = random.shuffle(activeUsers ++ inactiveUsers)
 
-  def generateCredentials(count: Int): IndexedSeq[User] = {
-    Range(0, count).map(_ => User(randomString(Options.usernameLength, Util.random), randomString(Options.passwordLength, Util.random), null, randomRoles(Util.random)))
+  def generateCredentials(count: Int, active: Boolean): IndexedSeq[User] = {
+    Range(0, count).map(_ => User(randomString(Options.usernameLength, Util.random),
+      randomString(Options.passwordLength, Util.random), null, active, randomRoles(Util.random)))
   }
 
   val activeUsersContainer = new RandomContainer[Map[String, String]](activeUsers
@@ -43,7 +45,7 @@ object Feeders {
   }
 
   def addUser(username : String, password: String, id : String): Unit = {
-    val user: User = new User(username, password, id, randomRoles())
+    val user: User = new User(username, password, id, true, randomRoles())
     activeUsersContainer += addState(user.toMap)
   }
 

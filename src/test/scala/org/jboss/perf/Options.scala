@@ -6,6 +6,8 @@ package org.jboss.perf
   * @author Radim Vansa &lt;rvansa@redhat.com&gt;
   */
 object Options {
+  val fullReload: Boolean = System.getProperty("test.fullReload", "false").toBoolean
+
   // my id and number of driver machines
   val driver: Int = Integer.getInteger("test.driver", 0)
 

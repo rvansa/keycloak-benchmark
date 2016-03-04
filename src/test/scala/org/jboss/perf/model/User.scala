@@ -8,10 +8,10 @@ import scala.collection.JavaConverters._
 /**
   * @author Radim Vansa &lt;rvansa@redhat.com&gt;
   */
-case class User(val username: String, val password: String, var id: String, val realmRoles: List[String]) {
+case class User(val username: String, val password: String, var id: String, val active: Boolean, val realmRoles: List[String]) {
 
   def this(map: Map[String, String]) {
-    this(map("username"), map("password"), map("id"), List())
+    this(map("username"), map("password"), map("id"), true, List())
   }
 
   def getCredentials: CredentialRepresentation = {
@@ -29,7 +29,14 @@ case class User(val username: String, val password: String, var id: String, val 
     var representation = new UserRepresentation
     // Id is ignored
     representation.setUsername(username)
-    representation.setEnabled(true)
+    if (active) {
+      representation.setFirstName("Johny");
+      representation.setLastName("Active");
+    } else {
+      representation.setFirstName("Bob");
+      representation.setLastName("Sleepy")
+    }
+    representation.setEnabled(active)
     // Actually the credentials will be ignored on server
     representation.setCredentials(Collections.singletonList(getCredentials))
     representation.setRealmRoles(realmRoles.asJava)
