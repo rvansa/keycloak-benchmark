@@ -28,9 +28,11 @@ object Loader {
   client.setAdminUrl("http://" + Options.app + "/admin")
 
   realmRepresentation.getRoles.getRealm.addAll((0 until Options.userRoles).map(i => {
-    val role = new RoleRepresentation("user_role_" + i, "", false)
-    role.setId("user_role_" + i)
-    role
+//    role Ids are ignored anyway
+    new RoleRepresentation("user_role_" + i, "", false)
+//    val role = new RoleRepresentation("user_role_" + i, "", false)
+//    role.setId("user_role_" + i)
+//    role
   }).asJava)
   val realmName = realmRepresentation.getRealm
 
@@ -53,20 +55,17 @@ object Loader {
   def main(args: Array[String]) {
     val keycloak = connection()
     var optRealm = keycloak.realms().findAll().stream().filter((r: RealmRepresentation) => r.getRealm.equals(realmRepresentation.getRealm)).findFirst()
-    if (Options.fullReload) {
+    if (Options.fullReload || !optRealm.isPresent) {
       if (optRealm.isPresent) {
         keycloak.realm(realmName).remove()
       }
       keycloak.realms().create(realmRepresentation)
-      Feeders.totalUsers.par.foreach(addUser)
+      val roleIds = keycloak.realm(realmName).roles().list().asScala.map(role => (role.getName, role)).toMap
+      Feeders.totalUsers.par.foreach(u => addUser(u, roleIds))
     } else {
-      if (!optRealm.isPresent) {
-        keycloak.realms().create(realmRepresentation)
-        Feeders.totalUsers.par.foreach(addUser)
-      } else {
-        keycloak.realm(realmName).users().search(null, null, "Active", null, null, null).asScala.par.foreach(removeUser)
-        Feeders.activeUsers.par.foreach(addUser)
-      }
+      keycloak.realm(realmName).users().search(null, null, "Active", null, null, null).asScala.par.foreach(removeUser)
+      val roleIds = keycloak.realm(realmName).roles().list().asScala.map(role => (role.getName, role)).toMap
+      Feeders.activeUsers.par.foreach(u => addUser(u, roleIds))
     }
   }
 
@@ -91,7 +90,7 @@ object Loader {
     System.exit(1);
   }
 
-  def addUser(user: User): Unit = {
+  def addUser(user: User, roleIds: Map[String, RoleRepresentation]): Unit = {
     withUsers("create new user", users => {
       val response = users.create(user.toRepresentation)
       var id: String = getUserId(response)
@@ -109,7 +108,7 @@ object Loader {
       }
       val userResource: UserResource = users.get(id)
       userResource.resetPassword(user.getCredentials);
-      userResource.roles().realmLevel().add(user.getRealmRoles())
+      userResource.roles().realmLevel().add(user.getRealmRoles(roleIds))
       val counter: Int = loadCounter.incrementAndGet()
       if (counter % 100 == 0) {
         // damned scala

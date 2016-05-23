@@ -43,11 +43,7 @@ case class User(val username: String, val password: String, var id: String, val 
     representation
   }
 
-  def getRealmRoles(): util.List[RoleRepresentation] = {
-    realmRoles.map(r => {
-      val role = new RoleRepresentation(r, "", false);
-      role.setId(r)
-      role
-    }).asJava
+  def getRealmRoles(roleIds : Map[String, RoleRepresentation]): util.List[RoleRepresentation] = {
+    realmRoles.map(r => roleIds.get(r).orNull).asJava
   }
 }
