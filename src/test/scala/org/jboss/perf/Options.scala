@@ -23,6 +23,7 @@ object Options {
   var totalUsers: Int = Integer.getInteger("test.totalUsers", 100).toInt
   var usernameLength: Int = Integer.getInteger("test.usernameLength", 16).toInt
   var passwordLength: Int = Integer.getInteger("test.passwordLength", 16).toInt
+  val passwordPolicy: String = System.getProperty("test.passwordPolicy", "hashIterations(1)")
   var userRoles: Int = Integer.getInteger("test.userRoles", 100).toInt
   var userRolesPerUser: Int = Integer.getInteger("test.userRolesPerUser", 5).toInt
 

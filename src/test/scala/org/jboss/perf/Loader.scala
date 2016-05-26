@@ -41,6 +41,7 @@ object Loader {
   realmRepresentation.setPublicKey(Security.PublicKey)
   realmRepresentation.setPrivateKey(Security.PrivateKey)
   realmRepresentation.setCertificate(Security.Certificate)
+  realmRepresentation.setPasswordPolicy(Options.passwordPolicy)
 
   def connection(host: String = Options.servers(0)): Keycloak = {
     Keycloak.getInstance("http://" + host + "/auth", "master", "admin", "admin", "admin-cli")
@@ -63,6 +64,7 @@ object Loader {
       val roleIds = keycloak.realm(realmName).roles().list().asScala.map(role => (role.getName, role)).toMap
       Feeders.totalUsers.par.foreach(u => addUser(u, roleIds))
     } else {
+      keycloak.realm(realmName).update(realmRepresentation)
       keycloak.realm(realmName).users().search(null, null, "Active", null, null, null).asScala.par.foreach(removeUser)
       val roleIds = keycloak.realm(realmName).roles().list().asScala.map(role => (role.getName, role)).toMap
       Feeders.activeUsers.par.foreach(u => addUser(u, roleIds))

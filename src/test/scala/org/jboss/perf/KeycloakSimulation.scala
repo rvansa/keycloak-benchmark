@@ -131,7 +131,7 @@ class KeycloakSimulation extends Simulation {
   }
 
   def run(scenario: ScenarioBuilder, opsPerSecond: Double = Options.usersPerSecond) = scenario.inject(
-    rampUsersPerSec(math.max(opsPerSecond / 10d, 1d)) to opsPerSecond during Options.rampUp,
+    rampUsersPerSec(opsPerSecond / 10d) to opsPerSecond during Options.rampUp,
     constantUsersPerSec(opsPerSecond) during Options.duration
   ).protocols(protocolConf())
 
