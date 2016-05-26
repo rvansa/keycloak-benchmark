@@ -18,10 +18,14 @@ echo $ROOT_PID > /tmp/$SERVER/pid;
 
 # Start JFR on the server
 # let's wait so the host-controller can start server
-sleep 10
-SERVER_PID=`jps -vm | grep -e 'FlightRecorder' | cut -f 1 -d " "`
-if [ "x$SERVER_PID" != "x" ]; then
-    jcmd $SERVER_PID JFR.start name=$SERVER settings=profile
-else
-    echo "Flight Recorder is not available"
-fi
+for i in `seq 1 10`; do
+	sleep 5
+	SERVER_PID=`jps -vm | grep -e 'FlightRecorder' | cut -f 1 -d " "`
+	if [ "x$SERVER_PID" != "x" ]; then
+	    jcmd $SERVER_PID JFR.start name=$SERVER settings=profile   
+	    echo "Started flight recorder in process $SERVER_PID"
+	    break
+	else
+	    echo "No process with Flight Recorder"
+	fi
+done

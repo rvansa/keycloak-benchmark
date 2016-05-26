@@ -24,6 +24,7 @@
 # * APP_PORT = Port of the server for backchannel operations                 #
 ##############################################################################
 
+
 DIR=$(dirname $0)
 PROPERTIES=${1}
 DC_ADDRESS=$HOSTNAME
@@ -45,7 +46,10 @@ DB_ADDRESS=${DB_ADDRESS:-$HOSTNAME}
 DB_NAME=${DB_NAME:-test}
 DB_USER=${DB_USER:-test}
 DB_PASSWORD=${DB_PASSWORD:-test}
+DB_DRIVER=${DB_DRIVER:-postgresql}
+DB_PROTOCOL=${DB_PROTOCOL:-$DB_DRIVER}
 DC_DIR=${DC_DIR:-/tmp/master}
+SERVER_NAME=${SERVER_NAME:-Keycloak}
 SERVER_PORT=${SERVER_PORT:-8080}
 APP_ADDRESS=${APP_ADDRESS:-$HOSTNAME}
 APP_PORT=${APP_PORT:-8080}
@@ -67,24 +71,37 @@ DRIVER_LIST=$(printf "%s," "${DRIVERS[@]}")
 if [ "x$NO_PREPARE" = "x" ]; then
     # Prepare domain controller
     echo "Preparing domain controller..."
+    rm -rf $DC_DIR
     mkdir $DC_DIR
     export JBOSS_HOME=$DC_DIR
-    tar -xzf $KEYCLOAK_DIST -C $DC_DIR --strip-components=1
+    if [[ $KEYCLOAK_DIST == *.tar.gz ]]; then
+	    tar -xzf $KEYCLOAK_DIST -C $DC_DIR --strip-components=1
+    elif [[ $KEYCLOAK_DIST == *.zip ]]; then
+    	    unzip -n $KEYCLOAK_DIST -d $DC_DIR && mv $DC_DIR/`ls $DC_DIR`/* $DC_DIR
+    else
+	echo "ERROR: Cannot unzip domain controller";
+	exit 1;
+    fi
+    echo $DIR
+    ls -l $DIR/../server
     cat $DIR/../server/domain.xml | \
         sed 's/db-address-to-be-replaced/'$DB_ADDRESS'/' | \
         sed 's/db-name-to-be-replaced/'$DB_NAME'/' | \
         sed 's/db-user-to-be-replaced/'$DB_USER'/' | \
-        sed 's/db-password-to-be-replaced/'$DB_PASSWORD'/' \
+        sed 's/db-password-to-be-replaced/'$DB_PASSWORD'/' | \
+	sed 's/db-protocol-to-be-replaced/'$DB_PROTOCOL'/' | \
+	sed 's/db-driver-to-be-replaced/'$DB_DRIVER'/' \
         >  $DC_DIR/domain/configuration/domain.xml
+    cp $DIR/../server/host-master.xml $DC_DIR/domain/configuration
     echo "Domain controller ready."
 
     # Prepare servers = host controllers
     for SERVER in ${SERVERS[@]}; do
         echo "Copying server distribution to $SERVER..."
-        $RCP $KEYCLOAK_DIST $SERVER:/tmp/keycloak-server.tar.gz
+        $RCP $KEYCLOAK_DIST $SERVER:/tmp/$(basename $KEYCLOAK_DIST)
         $RCP $DIR/../server/host.xml $DIR/*.sh $SERVER:/tmp
         echo "Preparing server $SERVER..."
-        $RSH $SERVER "chmod a+x /tmp/prepare.sh && /tmp/prepare.sh $SERVER"
+        $RSH $SERVER "chmod a+x /tmp/prepare.sh && /tmp/prepare.sh $SERVER $(basename $KEYCLOAK_DIST)"
         $DIR/add-user.sh -u $SERVER -p admin -dc $DC_DIR/domain/configuration
         echo "Server $SERVER ready."
     done
@@ -96,28 +113,31 @@ if [ "x$NO_PREPARE" = "x" ]; then
     done
 fi
 
-echo "Starting domain controller..."
-$DC_DIR/bin/domain.sh --host-config=host-master.xml -bmanagement $DC_ADDRESS &> /dev/null &
-DC_PID=$!
+if [ "x$NO_SERVER_START" == "x" ]; then
+    echo "Starting domain controller..."
+    $DC_DIR/bin/domain.sh --host-config=host-master.xml -bmanagement $DC_ADDRESS &> /dev/null &
+    DC_PID=$!
 
-# Some shells (mrsh) don't return until whole process tree finishes, therefore, we have to
-# let it run on background and parse output locally
-SERVER_FD=3
-for SERVER in ${SERVERS[@]}; do
-    eval "exec $SERVER_FD< <($RSH $SERVER /tmp/start_server.sh $SERVER $DC_ADDRESS $LOG_DIR)"
-    ((SERVER_FD++))
-done;
-LAST_FD=$((SERVER_FD - 1))
-for SERVER_FD in `seq 3 $LAST_FD`; do
-    while eval "read <&$SERVER_FD line"; do
-        if [[  $line =~ Keycloak.*started.*\ in && ! ($line =~ Host\ Controller) ]]; then
-            echo $line
-            # pipe the output to /dev/null so that server is not blocked when it fills up the buffer
-            eval "cat <&$SERVER_FD > /dev/null " &
-            break;
-        fi
+    # Some shells (mrsh) don't return until whole process tree finishes, therefore, we have to
+    # let it run on background and parse output locally
+    SERVER_FD=3
+    for SERVER in ${SERVERS[@]}; do
+        eval "exec $SERVER_FD< <($RSH $SERVER /tmp/start_server.sh $SERVER $DC_ADDRESS $LOG_DIR)"
+        ((SERVER_FD++))
+    done;
+    LAST_FD=$((SERVER_FD - 1))
+    for SERVER_FD in `seq 3 $LAST_FD`; do
+        while eval "read <&$SERVER_FD line"; do
+            if [[  $line =~ $SERVER_NAME.*started.*\ in && ! ($line =~ Host\ Controller) ]]; then
+                echo $line
+                # pipe the output to /dev/null so that server is not blocked when it fills up the buffer
+                eval "cat <&$SERVER_FD > /dev/null " &
+                break;
+            fi
+        done
     done
-done
+
+fi
 
 CP="$DIR/../keycloak-benchmark.jar:$DIR/../keycloak-benchmark-tests.jar"
 if [ "x$NO_LOADER" = "x" ]; then
@@ -132,14 +152,14 @@ fi
 
 CP="/tmp/keycloak-benchmark.jar:/tmp/keycloak-benchmark-tests.jar"
 echo "Starting dummy app server..."
-$RSH $APP_ADDRESS "java -cp $CP $DRIVER_ARGS -Dtest.app=$APP_ADDRESS:$APP_PORT -Djava.net.preferIPv4Stack=true org.jboss.perf.AppServer" &
+$RSH $APP_ADDRESS "JAVA_HOME=$JAVA_HOME $JAVA_HOME/bin/java -cp $CP $DRIVER_ARGS -Dtest.app=$APP_ADDRESS:$APP_PORT -Djava.net.preferIPv4Stack=true org.jboss.perf.AppServer" &
 
 echo "Starting test..."
 START_DRIVER_PIDS=""
 for INDEX in ${!DRIVERS[@]}; do
     DRIVER=${DRIVERS[$INDEX]}
     $RSH $DRIVER rm -rf /tmp/$DRIVER
-    $RSH $DRIVER "java -cp $CP $DRIVER_ARGS -Dtest.servers=$SERVER_LIST -Dtest.app=$APP_ADDRESS:$APP_PORT -Dtest.driver=$INDEX -Dtest.drivers=$DRIVER_LIST -Dtest.dir=/tmp/$DRIVER Engine" &
+    $RSH $DRIVER "JAVA_HOME=$JAVA_HOME $JAVA_HOME/bin/java -cp /tmp/keycloak-benchmark.jar:/tmp/keycloak-benchmark-tests.jar $DRIVER_ARGS -Dtest.servers=$SERVER_LIST -Dtest.app=$APP_ADDRESS:$APP_PORT -Dtest.driver=$INDEX -Dtest.drivers=$DRIVER_LIST -Dtest.dir=/tmp/$DRIVER Engine" &
     START_DRIVER_PIDS="$START_DRIVER_PIDS $!"
 done
 if [ "x$START_DRIVER_PIDS" != "x" ]; then

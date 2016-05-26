@@ -34,7 +34,7 @@
   "groups": [],
   "defaultRoles": [ "user" ],
   "defaultGroups": [],
-  "passwordPolicy": "",
+  "passwordPolicy": "hashIterations(1)",
   "otpPolicyType": "",
   "otpPolicyAlgorithm": "",
   "otpPolicyInitialCounter": "0",

@@ -85,8 +85,8 @@
             <subsystem xmlns="urn:jboss:domain:datasources:4.0">
                 <datasources>
                     <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
-                        <connection-url>jdbc:postgresql://db-address-to-be-replaced/db-name-to-be-replaced</connection-url>
-                        <driver>postgresql</driver>
+                        <connection-url>jdbc:db-protocol-to-be-replaced://db-address-to-be-replaced/db-name-to-be-replaced</connection-url>
+                        <driver>db-driver-to-be-replaced</driver>
                         <security>
                             <user-name>db-user-to-be-replaced</user-name>
                             <password>db-password-to-be-replaced</password>
@@ -96,6 +96,9 @@
                         <driver name="postgresql" module="org.postgresql">
                             <xa-datasource-class>org.postgresql.xa.PGXADataSource</xa-datasource-class>
                         </driver>
+                        <driver name="mysql" module="com.mysql">
+                            <xa-datasource-class>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</xa-datasource-class>
+			</driver>
                     </drivers>
                 </datasources>
             </subsystem>
@@ -421,7 +424,7 @@
         <server-group name="keycloak-group" profile="ha">
             <socket-binding-group ref="ha-sockets"/>
             <jvm name="default">
-                <heap size="4G" max-size="4G"/>
+                <heap size="2G" max-size="2G"/>
                 <jvm-options>
                     <option value="-XX:+UnlockCommercialFeatures"/>
                     <option value="-XX:+FlightRecorder"/>
