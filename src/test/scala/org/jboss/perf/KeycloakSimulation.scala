@@ -2,6 +2,7 @@ package org.jboss.perf
 
 
 import io.gatling.core.Predef._
+import io.gatling.core.controller.inject.InjectionStep
 import io.gatling.core.pause.Normal
 import io.gatling.core.session._
 import io.gatling.core.structure.ScenarioBuilder
@@ -130,10 +131,16 @@ class KeycloakSimulation extends Simulation {
     return Options.servers(ThreadLocalRandom.current().nextInt(Options.servers.length));
   }
 
-  def run(scenario: ScenarioBuilder, opsPerSecond: Double = Options.usersPerSecond) = scenario.inject(
-    rampUsersPerSec(opsPerSecond / 10d) to opsPerSecond during Options.rampUp,
-    constantUsersPerSec(opsPerSecond) during Options.duration
-  ).protocols(protocolConf())
+  def run(scenario: ScenarioBuilder, opsPerSecond: Double = Options.usersPerSecond) = {
+    val steps = new Array[InjectionStep](Options.increments + 1);
+    steps(0) = rampUsersPerSec(opsPerSecond / 10d) to opsPerSecond during Options.rampUp
+    var rate: Double = 1d
+    for (i <- 1 to Options.increments) {
+      steps(i) = constantUsersPerSec(opsPerSecond * rate) during Options.duration randomized;
+      rate = rate * Options.incrementCoef
+    }
+    scenario.inject(steps).protocols(protocolConf())
+  }
 
   setUp(
     run(users, Options.usersPerSecond),

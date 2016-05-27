@@ -18,6 +18,8 @@ object Options {
   val rampDown: Int = Integer.getInteger("test.rampDown", 30).toInt
   val usersPerSecond: Double = System.getProperty("test.usersPerSecond", "100").toDouble
   val adminsPerSecond: Double = System.getProperty("test.adminsPerSecond", "2").toDouble
+  val increments: Int = Integer.getInteger("test.increments", 1).toInt
+  val incrementCoef: Double = System.getProperty("test.incrementCoef", "1.1").toDouble
 
   var activeUsers: Int = Integer.getInteger("test.activeUsers", 50).toInt
   var totalUsers: Int = Integer.getInteger("test.totalUsers", 100).toInt
