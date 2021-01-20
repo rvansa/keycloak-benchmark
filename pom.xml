@@ -15,7 +15,7 @@
 		<gatling.version>2.1.7</gatling.version>
 		<keycloak.version>1.9.0.Final</keycloak.version>
 		<jboss-logging.version>3.3.0.Final</jboss-logging.version>
-		<jackson.version>2.6.5</jackson.version>
+		<jackson.version>2.12.1</jackson.version>
 		<resteasy.version>3.0.13.Final</resteasy.version>
 
 		<scala-maven-plugin.version>3.2.2</scala-maven-plugin.version>
