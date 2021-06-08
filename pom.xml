@@ -13,7 +13,7 @@
 		<encoding>UTF-8</encoding>
 
 		<gatling.version>2.1.7</gatling.version>
-		<keycloak.version>1.9.0.Final</keycloak.version>
+		<keycloak.version>13.0.0</keycloak.version>
 		<jboss-logging.version>3.3.0.Final</jboss-logging.version>
 		<jackson.version>2.6.5</jackson.version>
 		<resteasy.version>3.0.13.Final</resteasy.version>
